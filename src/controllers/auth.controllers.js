@@ -283,12 +283,55 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { userId: user._id }, "Password reset email sent"));
+    .json(
+      new ApiResponse(200, { userId: user._id }, "Password reset email sent"),
+    );
 });
 
 const resetForgottenPassword = asyncHandler(async (req, res) => {
-  
-})
+  const token = req.params.token;
+
+  if (!token) {
+    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
+  }
+
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    return res.status(404).json(new ApiError(404, "All feilds are required"));
+  }
+
+  const newHashedToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    forgotPasswordToken: newHashedToken,
+    forgotPasswordExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
+  }
+
+  user.password = newPassword;
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+  user.refreshToken = undefined;
+
+  await user.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { userId: user._id },
+        "Password updated successfully",
+      ),
+    );
+});
 
 export {
   registerUser,
@@ -297,5 +340,5 @@ export {
   verifyEmail,
   resendEmailVerification,
   forgotPasswordRequest,
-  resetForgottenPassword
+  resetForgottenPassword,
 };
