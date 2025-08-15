@@ -7,6 +7,7 @@ import {
   resendEmailVerification,
   forgotPasswordRequest,
   resetForgottenPassword,
+  refreshAccessToken,
 } from "../controllers/auth.controllers.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 
@@ -19,5 +20,6 @@ router.route("/verify-email/:token").post(verifyEmail);
 router.route("/resendEmailVerification").post(resendEmailVerification);
 router.route("/forgotPasswordRequest").post(forgotPasswordRequest);
 router.route("/reset-password/:token").post(resetForgottenPassword);
+router.route("/refreshAccessToken").post(refreshAccessToken);
 
 export default router;

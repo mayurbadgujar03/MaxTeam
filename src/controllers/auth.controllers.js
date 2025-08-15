@@ -10,6 +10,8 @@ import {
 
 import dotenv from "dotenv";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -276,7 +278,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
     subject: "Forgot password request",
     mailgenContent: forgotPasswordRequestMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
+      `${process.env.BASE_URL}/api/v1/user/reset-password/${unHashedToken}`,
       user.forgotPasswordExpiry,
     ),
   });
@@ -315,6 +317,11 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Invalid or expired token"));
   }
 
+  const isMatched = await bcrypt.compare(newPassword, user.password);
+  if (isMatched) {
+    return res.status(404).json(new ApiError(404, "Try new password"));
+  }
+
   user.password = newPassword;
   user.forgotPasswordToken = undefined;
   user.forgotPasswordExpiry = undefined;
@@ -333,6 +340,49 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
     );
 });
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
+
+  if (!token) {
+    return res.status(401).json(new ApiError(401, "No refresh token provided"));
+  }
+
+  const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+  const user = await User.findById(decoded._id);
+
+  if (
+    !user ||
+    user.refreshToken !== token
+  ) {
+    return res.status(401).json(new ApiError(403, "Refresh token is invalid or expired"));
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  const accessOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000,
+  };
+  const refreshOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  res
+    .cookie("accessToken", accessToken, accessOptions)
+    .cookie("refreshToken", refreshToken, refreshOptions)
+    .status(200)
+    .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -341,4 +391,5 @@ export {
   resendEmailVerification,
   forgotPasswordRequest,
   resetForgottenPassword,
+  refreshAccessToken,
 };
