@@ -2,7 +2,11 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
-import { sendEmail, emailVerificationMailgenContent } from "../utils/mail.js";
+import {
+  sendEmail,
+  emailVerificationMailgenContent,
+  forgotPasswordRequestMailgenContent,
+} from "../utils/mail.js";
 
 import dotenv from "dotenv";
 import crypto from "crypto";
@@ -89,7 +93,7 @@ const loginUser = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "User not found"));
   }
 
-  if(user.isEmailVerified !== true) {
+  if (user.isEmailVerified !== true) {
     return res.status(400).json(new ApiResponse(400, "Email not verified"));
   }
 
@@ -163,10 +167,14 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(404).json(new ApiError(404, "Invalid or expired token"));
-  };
+  }
 
-  if(user.isEmailVerified === true) {
-    return res.status(200).json(new ApiResponse(200, "Already verified"));
+  if (user.isEmailVerified) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, "If this account exists, it is already verified"),
+      );
   }
 
   user.isEmailVerified = true;
@@ -178,4 +186,116 @@ const verifyEmail = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Verified successfully"));
 });
 
-export { registerUser, loginUser, logoutUser, verifyEmail };
+const resendEmailVerification = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "User with this email doesn't exist"));
+  }
+
+  if (user.isEmailVerified) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, "If this account exists, it is already verified"),
+      );
+  }
+
+  const { hashedToken, unHashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  if (!hashedToken || !unHashedToken || !tokenExpiry) {
+    return res
+      .status(400)
+      .json(
+        new ApiError(400, "Failed to generate verification token for new user"),
+      );
+  }
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save();
+
+  sendEmail({
+    email: user.email,
+    subject: "Resend email verification on MaxTeam",
+    mailgenContent: emailVerificationMailgenContent(
+      user.username,
+      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
+      user.emailVerificationExpiry,
+    ),
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { userId: user._id },
+        "Verification email resent successfully",
+      ),
+    );
+});
+
+const forgotPasswordRequest = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
+
+  const user = await User.findOne({ email });
+
+  const { hashedToken, unHashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  if (!hashedToken || !unHashedToken || !tokenExpiry) {
+    return res
+      .status(400)
+      .json(
+        new ApiError(400, "Failed to generate verification token for new user"),
+      );
+  }
+
+  user.forgotPasswordToken = hashedToken;
+  user.forgotPasswordExpiry = tokenExpiry;
+
+  await user.save();
+
+  sendEmail({
+    email: user.email,
+    subject: "Forgot password request",
+    mailgenContent: forgotPasswordRequestMailgenContent(
+      user.username,
+      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
+      user.forgotPasswordExpiry,
+    ),
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { userId: user._id }, "Password reset email sent"));
+});
+
+const resetForgottenPassword = asyncHandler(async (req, res) => {
+  
+})
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  verifyEmail,
+  resendEmailVerification,
+  forgotPasswordRequest,
+  resetForgottenPassword
+};

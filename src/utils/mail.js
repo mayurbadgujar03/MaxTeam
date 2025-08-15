@@ -39,7 +39,11 @@ const sendEmail = async (options) => {
   }
 };
 
-const emailVerificationMailgenContent = (username, verificationUrl, urlExpiry) => {
+const emailVerificationMailgenContent = (
+  username,
+  verificationUrl,
+  urlExpiry,
+) => {
   return {
     body: {
       name: username,
@@ -58,8 +62,31 @@ const emailVerificationMailgenContent = (username, verificationUrl, urlExpiry) =
     },
   };
 };
+const forgotPasswordRequestMailgenContent = (
+  username,
+  resetPasswordUrl,
+  urlExpiry,
+) => {
+  return {
+    body: {
+      name: username,
+      intro: "We received a request to reset your password.",
+      action: {
+        instructions: "To reset your password, please click the button below:",
+        button: {
+          color: "#DC4D2F",
+          text: "Reset your password",
+          link: resetPasswordUrl,
+        },
+      },
+      outro:
+        "Need help, or have questions? Just reply to this email, we'd love to help.",
+    },
+  };
+};
 
 export {
-    emailVerificationMailgenContent,
-    sendEmail,
-}
+  emailVerificationMailgenContent,
+  sendEmail,
+  forgotPasswordRequestMailgenContent,
+};
