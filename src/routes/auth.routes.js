@@ -8,6 +8,8 @@ import {
   forgotPasswordRequest,
   resetForgottenPassword,
   refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
 } from "../controllers/auth.controllers.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 
@@ -21,5 +23,7 @@ router.route("/resendEmailVerification").post(resendEmailVerification);
 router.route("/forgotPasswordRequest").post(forgotPasswordRequest);
 router.route("/reset-password/:token").post(resetForgottenPassword);
 router.route("/refreshAccessToken").post(refreshAccessToken);
+router.route("/changeCurrentPassword").post(isLoggedIn, changeCurrentPassword);
+router.route("/getCurrentUser").post(isLoggedIn, getCurrentUser);
 
 export default router;

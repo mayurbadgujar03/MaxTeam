@@ -350,11 +350,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
   const user = await User.findById(decoded._id);
 
-  if (
-    !user ||
-    user.refreshToken !== token
-  ) {
-    return res.status(401).json(new ApiError(403, "Refresh token is invalid or expired"));
+  if (!user || user.refreshToken !== token) {
+    return res
+      .status(401)
+      .json(new ApiError(403, "Refresh token is invalid or expired"));
   }
 
   const accessToken = user.generateAccessToken();
@@ -383,6 +382,58 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
 });
 
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  console.log({ oldPassword, newPassword });
+
+  if (!oldPassword || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Old and new password are required" });
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const isMatch = await user.isPasswordCorrect(oldPassword);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Old password is incorrect" });
+  }
+
+  user.password = newPassword;
+  await user.save();
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { userId: user._id },
+        "Password changed successfully",
+      ),
+    );
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  const user = await User.findById(req.user._id).select(
+    "-password -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry",
+  );
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json({
+    message: "Current user fetched successfully",
+    user,
+  });
+});
+
 export {
   registerUser,
   loginUser,
@@ -392,4 +443,6 @@ export {
   forgotPasswordRequest,
   resetForgottenPassword,
   refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
 };
