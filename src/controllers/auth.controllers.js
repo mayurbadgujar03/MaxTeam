@@ -96,7 +96,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   if (user.isEmailVerified !== true) {
-    return res.status(400).json(new ApiResponse(400, "Email not verified"));
+    return res.status(400).json(new ApiError(400, "Email not verified"));
   }
 
   const isMatched = await user.isPasswordCorrect(password);
@@ -256,6 +256,10 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json(new ApiError(404, "User not found"));
+  }
 
   const { hashedToken, unHashedToken, tokenExpiry } =
     user.generateTemporaryToken();
@@ -428,10 +432,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  res.status(200).json({
-    message: "Current user fetched successfully",
-    user,
-  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Current user fetched successfully"));
 });
 
 export {
