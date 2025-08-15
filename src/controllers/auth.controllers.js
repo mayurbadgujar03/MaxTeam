@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
-import { User } from "../models/user.models.js"; 
+import { User } from "../models/user.models.js";
 import { sendEmail, emailVerificationMailgenContent } from "../utils/mail.js";
 import dotenv from "dotenv";
 
@@ -74,5 +74,51 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { userId: user._id }, "Registered user"));
 });
 
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-export { registerUser };
+  if (!email || !password) {
+    return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json(new ApiError(404, "User not found"));
+  }
+
+  const isMatched = await user.isPasswordCorrect(password);
+
+  if (!isMatched) {
+    return res.status(400).json(new ApiError(400, "Password not matched"));
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const accessOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000,
+  };
+  const refreshOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  res
+    .cookie("accessToken", accessToken, accessOptions)
+    .cookie("refreshToken", refreshToken, refreshOptions);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
+});
+
+export { registerUser, loginUser };
