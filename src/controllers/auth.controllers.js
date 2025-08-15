@@ -3,7 +3,9 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
 import { sendEmail, emailVerificationMailgenContent } from "../utils/mail.js";
+
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -64,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
     subject: "Email verification on MaxTeam",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/verify-email?token=${unHashedToken}`,
+      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
       user.emailVerificationExpiry,
     ),
   });
@@ -85,6 +87,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(404).json(new ApiError(404, "User not found"));
+  }
+
+  if(user.isEmailVerified !== true) {
+    return res.status(400).json(new ApiResponse(400, "Email not verified"));
   }
 
   const isMatched = await user.isPasswordCorrect(password);
@@ -124,7 +130,7 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
-  user.refreshToken = "";
+  user.refreshToken = undefined;
   await user.save();
   res.cookie("refreshToken", "", {
     httpOnly: true,
@@ -138,4 +144,38 @@ const logoutUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "LoggedOut the user"));
 });
 
-export { registerUser, loginUser, logoutUser };
+const verifyEmail = asyncHandler(async (req, res) => {
+  const token = req.params.token;
+
+  if (!token) {
+    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
+  }
+
+  const newHashedToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: newHashedToken,
+    emailVerificationExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
+  };
+
+  if(user.isEmailVerified === true) {
+    return res.status(200).json(new ApiResponse(200, "Already verified"));
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  await user.save();
+
+  return res.status(200).json(new ApiResponse(200, "Verified successfully"));
+});
+
+export { registerUser, loginUser, logoutUser, verifyEmail };
