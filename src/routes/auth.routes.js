@@ -18,12 +18,16 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/logout").post(isLoggedIn, logoutUser);
+
 router.route("/verify-email/:token").post(verifyEmail);
-router.route("/resendEmailVerification").post(resendEmailVerification);
-router.route("/forgotPasswordRequest").post(forgotPasswordRequest);
+router.route("/resend-email-verification").post(resendEmailVerification);
+
+router.route("/forgot-password-request").post(forgotPasswordRequest);
 router.route("/reset-password/:token").post(resetForgottenPassword);
-router.route("/refreshAccessToken").post(refreshAccessToken);
-router.route("/changeCurrentPassword").post(isLoggedIn, changeCurrentPassword);
-router.route("/getCurrentUser").post(isLoggedIn, getCurrentUser);
+
+router.route("/refresh-access-token").post(refreshAccessToken);
+
+router.route("/change-current-password").put(isLoggedIn, changeCurrentPassword);
+router.route("/current-user").get(isLoggedIn, getCurrentUser);
 
 export default router;
