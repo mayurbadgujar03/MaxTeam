@@ -6,6 +6,7 @@ const app = express();
 
 //router imports
 import healthCheckRouter from "./routes/healthcheck.routes.js";
+import userAuth from "./routes/auth.routes.js";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,5 +21,6 @@ app.use(
 );
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
+app.use("/api/v1/user", userAuth);
 
 export default app;
