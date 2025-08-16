@@ -1,8 +1,11 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
+import { asyncHandler } from "../utils/async-handler.js";
+import { ProjectMember } from "../models/projectmember.models.js";
 
 dotenv.config();
 
@@ -29,4 +32,39 @@ const isLoggedIn = async (req, res, next) => {
   }
 };
 
-export default isLoggedIn;
+const validateProjectPermission = (roles = []) =>
+  asyncHandler(async (req, res, next) => {
+    const { projectId } = req.params;
+
+    if (!projectId) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "Invalid or expired token"));
+    }
+
+    const project = await ProjectMember.findOne({
+      project: mongoose.Types.ObjectId(projectId),
+      user: mongoose.Types.ObjectId(req.user._id),
+    });
+
+    if (!project) {
+      return res.status(403).json(new ApiError(403, "Project not found"));
+    }
+
+    const givenRole = project?.role;
+
+    if (!roles.includes(givenRole)) {
+      return res
+        .status(403)
+        .json(
+          new ApiError(
+            403,
+            "You do not have permission to perform this action",
+          ),
+        );
+    }
+
+    next();
+  });
+
+export { isLoggedIn, validateProjectPermission };
