@@ -388,48 +388,45 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  console.log({ oldPassword, newPassword });
 
   if (!oldPassword || !newPassword) {
-    return res
-      .status(400)
-      .json({ message: "Old and new password are required" });
+    return res.status(401).json(new ApiError(401, "Old and new password are required"));
   }
 
   const user = await User.findById(req.user._id);
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    return res.status(401).json(new ApiError(401, "User not found"));
   }
-
+  
   const isMatch = await user.isPasswordCorrect(oldPassword);
   if (!isMatch) {
-    return res.status(401).json({ message: "Old password is incorrect" });
+    return res.status(401).json(new ApiError(401, "Old password is incorrect"));
   }
-
+  
   user.password = newPassword;
   await user.save();
   res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { userId: user._id },
-        "Password changed successfully",
-      ),
-    );
+  .status(200)
+  .json(
+    new ApiResponse(
+      200,
+      { userId: user._id },
+      "Password changed successfully",
+    ),
+  );
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json(new ApiError(401, "Not authenticated"));
   }
-
+  
   const user = await User.findById(req.user._id).select(
     "-password -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry",
   );
-
+  
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    return res.status(401).json(new ApiError(401, "User not found"));
   }
 
   return res

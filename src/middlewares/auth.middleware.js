@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
+import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 
 dotenv.config();
@@ -14,7 +15,14 @@ const isLoggedIn = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    req.user = decoded;
+    const user = await User.findById(decoded?._id).select(
+      "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
+    );
+
+    if (!user) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+    req.user = user;
     next();
   } catch (error) {
     return res.status(403).json(new ApiError(403, "Invalid or expired token"));
