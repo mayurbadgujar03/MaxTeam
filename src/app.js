@@ -8,6 +8,7 @@ const app = express();
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import userAuth from "./routes/auth.routes.js";
 import projectNotes from "./routes/note.routes.js";
+import project from "./routes/project.routes.js";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -24,5 +25,6 @@ app.use(
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/user", userAuth);
 app.use("/api/v1/project-note", projectNotes);
+app.use("/api/v1/project", project);
 
 export default app;

@@ -44,6 +44,10 @@ const createNote = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { content } = req.body;
 
+  if (!content) {
+    return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
+
   const project = await Project.findById(projectId);
 
   if (!project) {
@@ -69,6 +73,10 @@ const createNote = asyncHandler(async (req, res) => {
 const updateNote = asyncHandler(async (req, res) => {
   const { noteId } = req.params;
   const { content } = req.body;
+
+  if (!content) {
+    return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
 
   const existingNote = await ProjectNote.findById(noteId);
 
