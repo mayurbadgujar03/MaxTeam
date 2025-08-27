@@ -11,7 +11,7 @@ import {
   changeCurrentPassword,
   getCurrentUser,
 } from "../controllers/auth.controllers.js";
-import isLoggedIn from "../middlewares/auth.middleware.js";
+import { isLoggedIn } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
