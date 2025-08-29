@@ -20,6 +20,11 @@ const taskSchema = new Schema(
       ref: "User",
       required: true,
     },
+    assignedTo: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     status: {
       type: String,
       enum: AvailableTaskStatuses,

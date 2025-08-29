@@ -26,5 +26,6 @@ app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/user", userAuth);
 app.use("/api/v1/project-note", projectNotes);
 app.use("/api/v1/project", project);
+app.use("/api/v1/task", task);
 
 export default app;

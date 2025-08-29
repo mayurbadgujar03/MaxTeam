@@ -154,7 +154,7 @@ const getProjectMembers = asyncHandler(async (req, res) => {
   }
 
   const projectMembers = await ProjectMember.find({
-    project: mongoose.Types.ObjectId(projectId),
+    project: new mongoose.Types.ObjectId(projectId),
   }).populate("user", "username fullname avatar");
 
   return res
