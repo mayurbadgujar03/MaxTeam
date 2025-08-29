@@ -76,3 +76,72 @@ const createTask = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, task, "Task created successfully"));
 });
+
+const updateTask = asyncHandler(async (req, res) => {
+  console.log("working")
+    const { taskId } = req.params;
+    const { title, description, status, assignedTo } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json(new ApiError(404, "Task not found"));
+    }
+
+    if (title) task.title = title;
+    if (description) task.description = description;
+    if (status) task.status = status;
+    if (assignedTo) task.assignedTo = assignedTo;
+
+    if (req.files && req.files.length > 0) {
+      const newFiles = req.files.map((file) => ({
+        url: `/images/${file.filename}`,
+        mimetype: file.mimetype,
+        size: file.size,
+      }));
+      task.attachments.push(...newFiles);
+    }
+
+    await task.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, task, "Task updated successfully"));
+});
+
+const deleteTask = asyncHandler(async (req, res) => {
+  console.log("working")
+    const { taskId } = req.params;
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json(new ApiError(404, "Task not found"));
+    }
+
+    await SubTask.deleteMany({ task: taskId });
+
+    await task.deleteOne();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Task and subtasks deleted successfully"));
+});
+
+const createSubTask = asyncHandler(async (req, res) => {
+    const { taskId } = req.params;
+    const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json(new ApiError(400, "Title is required"));
+    }
+
+    const subtask = await SubTask.create({
+      title,
+      tasks: taskId,
+      createdBy: req.user._id,
+    });
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, subtask, "Subtask created successfully"));
+});
