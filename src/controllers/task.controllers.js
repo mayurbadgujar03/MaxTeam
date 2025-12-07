@@ -27,7 +27,6 @@ const getTasks = asyncHandler(async (req, res) => {
 });
 
 const getTaskById = asyncHandler(async (req, res) => {
-  console.log("working");
   const { taskId } = req.params;
 
   const task = await Task.findById(taskId)
@@ -80,7 +79,6 @@ const createTask = asyncHandler(async (req, res) => {
 });
 
 const updateTask = asyncHandler(async (req, res) => {
-  console.log("working");
   const { taskId } = req.params;
   const { title, description, status, assignedTo } = req.body;
 
