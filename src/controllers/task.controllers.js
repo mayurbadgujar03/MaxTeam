@@ -48,7 +48,7 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, assignedTo } = req.body;
+  const { title, description, assignedTo, status } = req.body;
   const { projectId } = req.params;
 
   if (!title) {
@@ -71,6 +71,7 @@ const createTask = asyncHandler(async (req, res) => {
     assignedBy: req.user._id,
     assignedTo: assignedTo || null,
     attachments,
+    status,
   });
 
   return res
