@@ -9,6 +9,7 @@ import healthCheckRouter from "./routes/healthcheck.routes.js";
 import userAuth from "./routes/auth.routes.js";
 import projectNotes from "./routes/note.routes.js";
 import project from "./routes/project.routes.js";
+import task from "./routes/task.routes.js";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

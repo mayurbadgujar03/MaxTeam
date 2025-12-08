@@ -72,7 +72,7 @@ const registerUser = asyncHandler(async (req, res) => {
     subject: "Email verification on MaxTeam",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
+      `${process.env.BASE_URL}/auth/verify-email/${unHashedToken}`,
       user.emailVerificationExpiry,
     ),
   });
@@ -282,7 +282,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
     subject: "Forgot password request",
     mailgenContent: forgotPasswordRequestMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/user/reset-password/${unHashedToken}`,
+      `${process.env.BASE_URL}/auth/reset-password/${unHashedToken}`,
       user.forgotPasswordExpiry,
     ),
   });
