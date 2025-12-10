@@ -1,20 +1,20 @@
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { Task } from "../models/task.models.js";
-import { SubTask } from "../models/subtask.models.js";
+import { ProjectTask } from "../models/task.models.js";
+import { ProjectSubTask } from "../models/subtask.models.js";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const tasks = await Task.find({ project: projectId })
+  const tasks = await ProjectTask.find({ project: projectId })
     .populate("assignedBy", "username fullName")
     .populate("assignedTo", "username fullName")
     .lean();
 
   const tasksWithSubtasks = await Promise.all(
     tasks.map(async (task) => {
-      const subtasks = await SubTask.find({ task: task._id }).lean();
+      const subtasks = await ProjectSubTask.find({ task: task._id }).lean();
       return { ...task, subtasks };
     }),
   );
@@ -29,7 +29,7 @@ const getTasks = asyncHandler(async (req, res) => {
 const getTaskById = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
 
-  const task = await Task.findById(taskId)
+  const task = await ProjectTask.findById(taskId)
     .populate("assignedBy", "username fullName")
     .populate("assignedTo", "username fullName")
     .lean();
@@ -38,7 +38,7 @@ const getTaskById = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Task not found"));
   }
 
-  const subtasks = await SubTask.find({ task: taskId }).lean();
+  const subtasks = await ProjectSubTask.find({ task: taskId }).lean();
 
   return res
     .status(200)
@@ -64,7 +64,7 @@ const createTask = asyncHandler(async (req, res) => {
     }));
   }
 
-  const task = await Task.create({
+  const task = await ProjectTask.create({
     title,
     description,
     project: projectId,
@@ -83,7 +83,7 @@ const updateTask = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
   const { title, description, status, assignedTo } = req.body;
 
-  const task = await Task.findById(taskId);
+  const task = await ProjectTask.findById(taskId);
   if (!task) {
     return res.status(404).json(new ApiError(404, "Task not found"));
   }
@@ -110,16 +110,15 @@ const updateTask = asyncHandler(async (req, res) => {
 });
 
 const deleteTask = asyncHandler(async (req, res) => {
-  console.log("working");
   const { taskId } = req.params;
 
-  const task = await Task.findById(taskId);
+  const task = await ProjectTask.findById(taskId);
 
   if (!task) {
     return res.status(404).json(new ApiError(404, "Task not found"));
   }
 
-  await SubTask.deleteMany({ task: taskId });
+  await ProjectSubTask.deleteMany({ task: taskId });
 
   await task.deleteOne();
 
@@ -129,16 +128,17 @@ const deleteTask = asyncHandler(async (req, res) => {
 });
 
 const createSubTask = asyncHandler(async (req, res) => {
-  const { taskId } = req.params;
+  const { taskId, projectId } = req.params;
   const { title } = req.body;
 
   if (!title) {
     return res.status(400).json(new ApiError(400, "Title is required"));
   }
 
-  const subtask = await SubTask.create({
+  const subtask = await ProjectSubTask.create({
     title,
-    tasks: taskId,
+    task: taskId,
+    project: projectId,
     createdBy: req.user._id,
   });
 
@@ -151,7 +151,7 @@ const updateSubTask = asyncHandler(async (req, res) => {
   const { subtaskId } = req.params;
   const { title, isCompleted } = req.body;
 
-  const subtask = await SubTask.findById(subtaskId);
+  const subtask = await ProjectSubTask.findById(subtaskId);
 
   if (!subtask) {
     return res.status(404).json(new ApiError(404, "Subtask not found"));
@@ -170,7 +170,7 @@ const updateSubTask = asyncHandler(async (req, res) => {
 const deleteSubTask = asyncHandler(async (req, res) => {
   const { subtaskId } = req.params;
 
-  const subtask = await SubTask.findById(subtaskId);
+  const subtask = await ProjectSubTask.findById(subtaskId);
 
   if (!subtask) {
     return res.status(404).json(new ApiError(404, "Subtask not found"));

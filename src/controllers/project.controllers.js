@@ -5,6 +5,8 @@ import { UserRolesEnum } from "../utils/constants.js";
 import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectNote } from "../models/note.models.js";
+import { ProjectTask } from "../models/task.models.js";
+import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import mongoose from "mongoose";
 
@@ -137,6 +139,8 @@ const deleteProject = asyncHandler(async (req, res) => {
   }
 
   await ProjectMember.deleteMany({ project: projectId });
+  await ProjectTask.deleteMany({ project: projectId });
+  await ProjectSubTask.deleteMany({ project: projectId });
   await ProjectNote.deleteMany({ project: projectId });
 
   return res
