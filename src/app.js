@@ -7,6 +7,7 @@ const app = express();
 //router imports
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import userAuth from "./routes/auth.routes.js";
+import dashboardStats from "./routes/dashboard.routes.js";
 import projectNotes from "./routes/note.routes.js";
 import project from "./routes/project.routes.js";
 import task from "./routes/task.routes.js";
@@ -25,6 +26,7 @@ app.use(
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/user", userAuth);
+app.use("/api/v1/dashboard", dashboardStats);
 app.use("/api/v1/project-note", projectNotes);
 app.use("/api/v1/project", project);
 app.use("/api/v1/task", task);
