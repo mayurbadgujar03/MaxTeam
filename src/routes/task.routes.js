@@ -38,10 +38,7 @@ router
   .get(isLoggedIn, getTaskById)
   .put(
     isLoggedIn,
-    validateProjectPermission([
-      UserRolesEnum.ADMIN,
-      UserRolesEnum.PROJECT_ADMIN,
-    ]),
+    validateProjectPermission(AvailableUserRoles),
     upload.array("attachments", 5),
     updateTask,
   )

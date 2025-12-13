@@ -3,6 +3,8 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ProjectTask } from "../models/task.models.js";
 import { ProjectSubTask } from "../models/subtask.models.js";
+import { ProjectMember } from "../models/projectmember.models.js";
+import { UserRolesEnum } from "../utils/constants.js";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -80,7 +82,7 @@ const createTask = asyncHandler(async (req, res) => {
 });
 
 const updateTask = asyncHandler(async (req, res) => {
-  const { taskId } = req.params;
+  const { taskId, projectId } = req.params;
   const { title, description, status, assignedTo } = req.body;
 
   const task = await ProjectTask.findById(taskId);
@@ -88,10 +90,48 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Task not found"));
   }
 
+  const memberRecord = await ProjectMember.findOne({
+    user: req.user._id,
+    project: projectId,
+  });
+
+  if (!memberRecord) {
+    return res.status(403).json(
+      new ApiError(403, "You are not a member of this project")
+    );
+  }
+
+  const userRole = memberRecord.role;
+
+  if (userRole === UserRolesEnum.MEMBER) {
+    if (!task.assignedTo || task.assignedTo.toString() !== req.user._id.toString()) {
+      return res.status(403).json(
+        new ApiError(403, "You can only update tasks assigned to you")
+      );
+    }
+
+    const updateFields = Object.keys(req.body);
+    const allowedFields = ["status"];
+    const hasDisallowedFields = updateFields.some(
+      (field) => !allowedFields.includes(field)
+    );
+
+    if (hasDisallowedFields) {
+      return res.status(403).json(
+        new ApiError(403, "Members can only update task status")
+      );
+    }
+
+    if (req.files && req.files.length > 0) {
+      return res.status(403).json(
+        new ApiError(403, "Members cannot upload attachments")
+      );
+    }
+  }
   if (title) task.title = title;
   if (description) task.description = description;
   if (status) task.status = status;
-  if (assignedTo) task.assignedTo = assignedTo;
+  if (assignedTo !== undefined) task.assignedTo = assignedTo;
 
   if (req.files && req.files.length > 0) {
     const newFiles = req.files.map((file) => ({
