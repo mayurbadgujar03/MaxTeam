@@ -34,7 +34,7 @@ const notificationSchema = new Schema(
     },
     taskId: {
       type: Schema.Types.ObjectId,
-      ref: "ProjectTask",
+      ref: "Task",
     },
     read: {
       type: Boolean,

@@ -4,7 +4,6 @@ import cors from "cors";
 
 const app = express();
 
-//router imports
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import userAuth from "./routes/auth.routes.js";
 import dashboardStats from "./routes/dashboard.routes.js";

@@ -5,6 +5,10 @@ import { ProjectTask } from "../models/task.models.js";
 import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { UserRolesEnum } from "../utils/constants.js";
+import { Notification } from "../models/notification.models.js";
+import { Project } from "../models/project.models.js";
+import { User } from "../models/user.models.js";
+import mongoose from "mongoose";
 
 const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -76,6 +80,43 @@ const createTask = asyncHandler(async (req, res) => {
     status,
   });
 
+  const project = await Project.findById(projectId);
+  const creator = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  if (assignedTo) {
+    await Notification.create({
+      userId: assignedTo,
+      type: "task_assigned",
+      message: `You were assigned to "${title}"`,
+      description: `${creator.fullname} assigned you a new task in ${project.name}`,
+      projectId: projectId,
+      taskId: task._id,
+      read: false,
+      metadata: {
+        projectName: project.name,
+        taskTitle: title,
+        actorName: creator.fullname,
+        actorId: creator._id,
+      },
+    });
+  }
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString() && 
+        (!assignedTo || member.user.toString() !== assignedTo.toString())) {
+      await Notification.create({
+        userId: member.user,
+        type: "task_assigned",
+        message: `New task created: "${title}"`,
+        description: `${creator.fullname} created a new task in ${project.name}`,
+        projectId: projectId,
+        taskId: task._id,
+        read: false,
+      });
+    }
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, task, "Task created successfully"));
@@ -128,6 +169,9 @@ const updateTask = asyncHandler(async (req, res) => {
       );
     }
   }
+  const oldStatus = task.status;
+  const oldAssignedTo = task.assignedTo;
+
   if (title) task.title = title;
   if (description) task.description = description;
   if (status) task.status = status;
@@ -144,13 +188,59 @@ const updateTask = asyncHandler(async (req, res) => {
 
   await task.save();
 
+  const project = await Project.findById(projectId);
+  const updater = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  if (assignedTo && assignedTo !== oldAssignedTo?.toString()) {
+    await Notification.create({
+      userId: assignedTo,
+      type: "task_assigned",
+      message: `You were assigned to "${task.title}"`,
+      description: `${updater.fullname} assigned you a task in ${project.name}`,
+      projectId: projectId,
+      taskId: task._id,
+      read: false,
+    });
+  }
+
+  if (status === "completed" && oldStatus !== "completed") {
+    for (const member of projectMembers) {
+      if (member.user.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          userId: member.user,
+          type: "task_completed",
+          message: `Task completed: "${task.title}"`,
+          description: `${updater.fullname} marked a task as completed in ${project.name}`,
+          projectId: projectId,
+          taskId: task._id,
+          read: false,
+        });
+      }
+    }
+  } else if (status || title || description) {
+    for (const member of projectMembers) {
+      if (member.user.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          userId: member.user,
+          type: "task_assigned",
+          message: `Task updated: "${task.title}"`,
+          description: `${updater.fullname} updated a task in ${project.name}`,
+          projectId: projectId,
+          taskId: task._id,
+          read: false,
+        });
+      }
+    }
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, task, "Task updated successfully"));
 });
 
 const deleteTask = asyncHandler(async (req, res) => {
-  const { taskId } = req.params;
+  const { taskId, projectId } = req.params;
 
   const task = await ProjectTask.findById(taskId);
 
@@ -158,9 +248,27 @@ const deleteTask = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Task not found"));
   }
 
-  await ProjectSubTask.deleteMany({ task: taskId });
+  const taskTitle = task.title;
 
+  await ProjectSubTask.deleteMany({ task: taskId });
   await task.deleteOne();
+
+  const project = await Project.findById(projectId);
+  const deleter = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "task_assigned",
+        message: `Task deleted: "${taskTitle}"`,
+        description: `${deleter.fullname} deleted a task from ${project.name}`,
+        projectId: projectId,
+        read: false,
+      });
+    }
+  }
 
   return res
     .status(200)
@@ -182,6 +290,32 @@ const createSubTask = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   });
 
+  const task = await ProjectTask.findById(taskId);
+  const project = await Project.findById(projectId);
+  const creator = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "task_assigned",
+        message: `New subtask added to "${task.title}"`,
+        description: `${creator.fullname} added a subtask: "${title}"`,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        taskId: new mongoose.Types.ObjectId(taskId),
+        read: false,
+        metadata: {
+          projectName: project.name,
+          taskTitle: task.title,
+          subtaskTitle: title,
+          actorName: creator.fullname,
+          actorId: creator._id,
+        },
+      });
+    }
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, subtask, "Subtask created successfully"));
@@ -197,10 +331,62 @@ const updateSubTask = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Subtask not found"));
   }
 
+  const oldCompleted = subtask.isCompleted;
+  const oldTitle = subtask.title;
+
   if (title) subtask.title = title;
   if (isCompleted !== undefined) subtask.isCompleted = isCompleted;
 
   await subtask.save();
+
+  const task = await ProjectTask.findById(subtask.task);
+  const project = await Project.findById(subtask.project);
+  const updater = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: subtask.project });
+
+  if (isCompleted && !oldCompleted) {
+    for (const member of projectMembers) {
+      if (member.user.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          userId: member.user,
+          type: "task_completed",
+          message: `Subtask completed: "${subtask.title}"`,
+          description: `${updater.fullname} completed a subtask in "${task.title}"`,
+          projectId: new mongoose.Types.ObjectId(subtask.project),
+          taskId: new mongoose.Types.ObjectId(subtask.task),
+          read: false,
+          metadata: {
+            projectName: project.name,
+            taskTitle: task.title,
+            subtaskTitle: subtask.title,
+            actorName: updater.fullname,
+            actorId: updater._id,
+          },
+        });
+      }
+    }
+  } else if (title || isCompleted !== undefined) {
+    for (const member of projectMembers) {
+      if (member.user.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          userId: member.user,
+          type: "task_assigned",
+          message: `Subtask updated in "${task.title}"`,
+          description: `${updater.fullname} updated a subtask: "${subtask.title}"`,
+          projectId: new mongoose.Types.ObjectId(subtask.project),
+          taskId: new mongoose.Types.ObjectId(subtask.task),
+          read: false,
+          metadata: {
+            projectName: project.name,
+            taskTitle: task.title,
+            subtaskTitle: subtask.title,
+            actorName: updater.fullname,
+            actorId: updater._id,
+          },
+        });
+      }
+    }
+  }
 
   return res
     .status(200)
@@ -216,7 +402,37 @@ const deleteSubTask = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Subtask not found"));
   }
 
+  const subtaskTitle = subtask.title;
+  const taskId = subtask.task;
+  const projectId = subtask.project;
+
   await subtask.deleteOne();
+
+  const task = await ProjectTask.findById(taskId);
+  const project = await Project.findById(projectId);
+  const deleter = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "task_assigned",
+        message: `Subtask deleted from "${task.title}"`,
+        description: `${deleter.fullname} deleted a subtask: "${subtaskTitle}"`,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        taskId: new mongoose.Types.ObjectId(taskId),
+        read: false,
+        metadata: {
+          projectName: project.name,
+          taskTitle: task.title,
+          subtaskTitle: subtaskTitle,
+          actorName: deleter.fullname,
+          actorId: deleter._id,
+        },
+      });
+    }
+  }
 
   return res
     .status(200)

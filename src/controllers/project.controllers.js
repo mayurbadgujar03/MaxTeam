@@ -101,6 +101,20 @@ const createProject = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Failed to create project"));
   }
 
+  await Notification.create({
+    userId: user._id,
+    type: "project_added",
+    message: `Project "${name}" created successfully`,
+    description: `You created a new project`,
+    projectId: project._id,
+    read: false,
+    metadata: {
+      projectName: name,
+      actorName: user.fullname,
+      actorId: user._id,
+    },
+  });
+
   return res
     .status(200)
     .json(new ApiResponse(200, project, "Project created successfully"));
@@ -126,6 +140,27 @@ const updateProject = asyncHandler(async (req, res) => {
     { new: true },
   ).populate("createdBy", "username fullname avatar");
 
+  const updater = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "project_updated",
+        message: `Project "${name}" was updated`,
+        description: `${updater.fullname} updated the project details`,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        read: false,
+        metadata: {
+          projectName: name,
+          actorName: updater.fullname,
+          actorId: updater._id,
+        },
+      });
+    }
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, project, "Project updated successfully"));
@@ -134,12 +169,34 @@ const updateProject = asyncHandler(async (req, res) => {
 const deleteProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const project = await Project.findByIdAndDelete(projectId);
+  const project = await Project.findById(projectId);
 
   if (!project) {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
 
+  const projectName = project.name;
+  const deleter = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "project_updated",
+        message: `Project "${projectName}" was deleted`,
+        description: `${deleter.fullname} deleted the project`,
+        read: false,
+        metadata: {
+          projectName: projectName,
+          actorName: deleter.fullname,
+          actorId: deleter._id,
+        },
+      });
+    }
+  }
+
+  await Project.findByIdAndDelete(projectId);
   await ProjectMember.deleteMany({ project: projectId });
   await ProjectTask.deleteMany({ project: projectId });
   await ProjectSubTask.deleteMany({ project: projectId });
@@ -229,16 +286,21 @@ const addMemberToProject = asyncHandler(async (req, res) => {
     (m) => m.user.toString() !== user._id.toString(),
   );
 
-  for (const member of otherMembers) {
-    await Notification.create({
-      userId: member._id,
-      type: "member_joined",
-      message: `${user.fullname} joined your project`,
-      description: `${project.name} has a new team member`,
-      projectId: project._id,
-      read: false,
-    });
-  }
+for (const member of otherMembers) {
+  await Notification.create({
+    userId: member.user,
+    type: "member_joined",
+    message: `${user.fullname} joined your project`,
+    description: `${project.name} has a new team member`,
+    projectId: project._id,
+    read: false,
+    metadata: {
+      projectName: project.name,
+      newMemberName: user.fullname,
+      newMemberId: user._id,
+    }
+  });
+}
 
   return res
     .status(200)
@@ -257,6 +319,44 @@ const deleteMember = asyncHandler(async (req, res) => {
     return res
       .status(404)
       .json(new ApiError(404, "Member not found or already removed"));
+  }
+
+  const project = await Project.findById(projectId);
+  const remover = await User.findById(req.user._id);
+  const removedUser = await User.findById(memberId);
+
+  await Notification.create({
+    userId: new mongoose.Types.ObjectId(memberId),
+    type: "member_removed",
+    message: `You were removed from "${project.name}"`,
+    description: `${remover.fullname} removed you from the project`,
+    projectId: new mongoose.Types.ObjectId(projectId),
+    read: false,
+    metadata: {
+      projectName: project.name,
+      actorName: remover.fullname,
+      actorId: remover._id,
+    },
+  });
+
+  const projectMembers = await ProjectMember.find({ project: projectId });
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "member_removed",
+        message: `${removedUser.fullname} left "${project.name}"`,
+        description: `${remover.fullname} removed a team member`,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        read: false,
+        metadata: {
+          projectName: project.name,
+          removedUserName: removedUser.fullname,
+          actorName: remover.fullname,
+          actorId: remover._id,
+        },
+      });
+    }
   }
 
   return res
@@ -283,12 +383,55 @@ const updateMemberRole = asyncHandler(async (req, res) => {
       .json(new ApiError(404, "Member not found or already removed"));
   }
 
+  const oldRole = member.role;
   member.role = role;
   await member.save();
 
   const populatedMember = await ProjectMember.findById(member._id)
     .select("role")
     .populate("user", "username fullName avatar");
+
+  const project = await Project.findById(projectId);
+  const updater = await User.findById(req.user._id);
+  const updatedUser = await User.findById(memberId);
+
+  await Notification.create({
+    userId: new mongoose.Types.ObjectId(memberId),
+    type: "project_updated",
+    message: `Your role in "${project.name}" was updated`,
+    description: `${updater.fullname} changed your role from ${oldRole} to ${role}`,
+    projectId: new mongoose.Types.ObjectId(projectId),
+    read: false,
+    metadata: {
+      projectName: project.name,
+      oldRole: oldRole,
+      newRole: role,
+      actorName: updater.fullname,
+      actorId: updater._id,
+    },
+  });
+
+  const projectMembers = await ProjectMember.find({ project: projectId });
+  for (const projectMember of projectMembers) {
+    if (projectMember.user.toString() !== req.user._id.toString() && 
+        projectMember.user.toString() !== memberId.toString()) {
+      await Notification.create({
+        userId: projectMember.user,
+        type: "project_updated",
+        message: `Team role updated in "${project.name}"`,
+        description: `${updater.fullname} changed ${updatedUser.fullname}'s role to ${role}`,
+        projectId: new mongoose.Types.ObjectId(projectId),
+        read: false,
+        metadata: {
+          projectName: project.name,
+          updatedUserName: updatedUser.fullname,
+          newRole: role,
+          actorName: updater.fullname,
+          actorId: updater._id,
+        },
+      });
+    }
+  }
 
   return res
     .status(200)

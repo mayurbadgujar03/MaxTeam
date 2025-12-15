@@ -3,6 +3,9 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ProjectNote } from "../models/note.models.js";
+import { Notification } from "../models/notification.models.js";
+import { ProjectMember } from "../models/projectmember.models.js";
+import { User } from "../models/user.models.js";
 import mongoose from "mongoose";
 
 const getNotes = asyncHandler(async (req, res) => {
@@ -65,6 +68,27 @@ const createNote = asyncHandler(async (req, res) => {
     "username fullname avatar",
   );
 
+  const creator = await User.findById(req.user._id);
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "project_updated",
+        message: `New note added in "${project.name}"`,
+        description: `${creator.fullname} added a new note`,
+        projectId: projectId,
+        read: false,
+        metadata: {
+          projectName: project.name,
+          actorName: creator.fullname,
+          actorId: creator._id,
+        },
+      });
+    }
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, populatedNote, "Notes Created successfully"));
@@ -90,6 +114,28 @@ const updateNote = asyncHandler(async (req, res) => {
     { new: true },
   ).populate("createdBy", "username fullname avatar");
 
+  const updater = await User.findById(req.user._id);
+  const project = await Project.findById(existingNote.project);
+  const projectMembers = await ProjectMember.find({ project: existingNote.project });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "project_updated",
+        message: `Note updated in "${project.name}"`,
+        description: `${updater.fullname} updated a note`,
+        projectId: existingNote.project,
+        read: false,
+        metadata: {
+          projectName: project.name,
+          actorName: updater.fullname,
+          actorId: updater._id,
+        },
+      });
+    }
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, note, "Notes updated successfully"));
@@ -98,11 +144,35 @@ const updateNote = asyncHandler(async (req, res) => {
 const deleteNote = asyncHandler(async (req, res) => {
   const { noteId } = req.params;
 
-  const note = await ProjectNote.findByIdAndDelete(noteId);
+  const note = await ProjectNote.findById(noteId);
 
   if (!note) {
     return res.status(404).json(new ApiError(404, "Note not found"));
   }
+
+  const deleter = await User.findById(req.user._id);
+  const project = await Project.findById(note.project);
+  const projectMembers = await ProjectMember.find({ project: note.project });
+
+  for (const member of projectMembers) {
+    if (member.user.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId: member.user,
+        type: "project_updated",
+        message: `Note deleted in "${project.name}"`,
+        description: `${deleter.fullname} deleted a note`,
+        projectId: note.project,
+        read: false,
+        metadata: {
+          projectName: project.name,
+          actorName: deleter.fullname,
+          actorId: deleter._id,
+        },
+      });
+    }
+  }
+
+  await ProjectNote.findByIdAndDelete(noteId);
 
   return res
     .status(200)
