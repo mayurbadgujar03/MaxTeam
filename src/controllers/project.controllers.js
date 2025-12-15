@@ -8,7 +8,9 @@ import { ProjectNote } from "../models/note.models.js";
 import { ProjectTask } from "../models/task.models.js";
 import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { Notification } from "../models/notification.models.js";
 import mongoose from "mongoose";
+import { type } from "os";
 
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -169,11 +171,16 @@ const getProjectMembers = asyncHandler(async (req, res) => {
 const addMemberToProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { email, role } = req.body;
+  const currentUser = req.user._id;
 
   if (!email || !role) {
-    return res.status(400).json(new ApiError(400, "All feilds are required"));
+    return res.status(400).json(new ApiError(400, "All fields are required"));
   }
 
+  const admin = await User.findById(currentUser);
+  if (!admin) {
+    return res.status(400).json(new ApiError(400, "admin not registered"));
+  }
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(400).json(new ApiError(400, "User not registered"));
@@ -200,6 +207,37 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
   if (!member) {
     return res.status(400).json(new ApiError(400, "Member not created"));
+  }
+
+  await Notification.create({
+    userId: user._id,
+    type: "project_added",
+    message: `You were added to "${project.name}"`,
+    description: `${admin.fullname} added you as a team member`,
+    projectId: project._id,
+    read: false,
+    metadata: {
+      projectName: project.name,
+      actorName: admin.fullname,
+      actorId: admin._id,
+    },
+  });
+
+  const projectMembers = await ProjectMember.find({ project: projectId });
+
+  const otherMembers = projectMembers.filter(
+    (m) => m.user.toString() !== user._id.toString(),
+  );
+
+  for (const member of otherMembers) {
+    await Notification.create({
+      userId: member._id,
+      type: "member_joined",
+      message: `${user.fullname} joined your project`,
+      description: `${project.name} has a new team member`,
+      projectId: project._id,
+      read: false,
+    });
   }
 
   return res
@@ -248,14 +286,15 @@ const updateMemberRole = asyncHandler(async (req, res) => {
   member.role = role;
   await member.save();
 
-  const populatedMember = await ProjectMember.findById(member._id).select("role").populate(
-    "user",
-    "username fullName avatar"
-  );
+  const populatedMember = await ProjectMember.findById(member._id)
+    .select("role")
+    .populate("user", "username fullName avatar");
 
   return res
     .status(200)
-    .json(new ApiResponse(200, populatedMember, "Member role updated successfully"));
+    .json(
+      new ApiResponse(200, populatedMember, "Member role updated successfully"),
+    );
 });
 
 export {

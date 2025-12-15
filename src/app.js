@@ -11,6 +11,7 @@ import dashboardStats from "./routes/dashboard.routes.js";
 import projectNotes from "./routes/note.routes.js";
 import project from "./routes/project.routes.js";
 import task from "./routes/task.routes.js";
+import notification from "./routes/notification.routes.js";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,5 +31,6 @@ app.use("/api/v1/dashboard", dashboardStats);
 app.use("/api/v1/project-note", projectNotes);
 app.use("/api/v1/project", project);
 app.use("/api/v1/task", task);
+app.use("/api/v1/notifications", notification);
 
 export default app;
