@@ -113,14 +113,14 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const accessOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 15 * 60 * 1000,
   };
   const refreshOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -311,7 +311,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
     .createHash("sha256")
     .update(token)
     .digest("hex");
-
+    
   const user = await User.findOne({
     forgotPasswordToken: newHashedToken,
     forgotPasswordExpiry: { $gt: Date.now() },
@@ -351,14 +351,15 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     return res.status(401).json(new ApiError(401, "No refresh token provided"));
   }
 
-  const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-  const user = await User.findById(decoded._id);
+  try {
+    const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decoded._id);
 
-  if (!user || user.refreshToken !== token) {
-    return res
-      .status(401)
-      .json(new ApiError(403, "Refresh token is invalid or expired"));
-  }
+    if (!user || user.refreshToken !== token) {
+      return res
+        .status(401)
+        .json(new ApiError(401, "Refresh token is invalid or expired"));
+    }
 
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
@@ -368,14 +369,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   const accessOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 15 * 60 * 1000,
   };
   const refreshOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -384,6 +385,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, refreshOptions)
     .status(200)
     .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
+  } catch (error) {
+    return res
+      .status(401)
+      .json(new ApiError(401, "Invalid or expired refresh token"));
+  }
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
