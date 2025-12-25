@@ -103,13 +103,14 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fullname">Full Name (optional)</Label>
+                <Label htmlFor="fullname">Full Name</Label>
                 <Input
                   id="fullname"
                   type="text"
                   placeholder="John Doe"
                   value={fullname}
                   onChange={(e) => setFullname(e.target.value)}
+                  required
                   autoComplete="name"
                 />
               </div>
