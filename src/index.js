@@ -1,5 +1,10 @@
 import app from "./app.js";
 import connectDB from "./db/index.js";
+import dotenv from "dotenv";
+
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: "./.env" });
+}
 
 let isConnected = false;
 
@@ -30,12 +35,12 @@ export default async (req, res) => {
       isConnected = true;
     } catch (error) {
       console.error("MongoDB connection failed:", error);
-      res.status(500).json({ error: "Database connection failed" });
-      return;
+      return res.status(500).json({ error: "Database connection failed" });
     }
   }
 
-  app(req, res);
+  // Pass to Express app
+  return app(req, res);
 };
 
 if (process.env.NODE_ENV !== 'production') {
