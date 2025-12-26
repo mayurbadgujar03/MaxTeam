@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 const app = express();
 
@@ -10,6 +11,24 @@ import projectNotes from "./routes/note.routes.js";
 import project from "./routes/project.routes.js";
 import task from "./routes/task.routes.js";
 import notification from "./routes/notification.routes.js";
+
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "https://flowbase-frontend.vercel.app"
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
