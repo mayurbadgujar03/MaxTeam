@@ -16,7 +16,8 @@ const sendEmail = async (options) => {
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
   const transporter = nodemailer.createTransport({
-    service: process.env.MAIL_SMTP_HOST,
+    host: "smtp.gmail.com",
+    port: 587,
     auth: {
       user: process.env.MAIL_SMTP_USER,
       pass: process.env.MAIL_SMTP_PASS,
