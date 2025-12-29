@@ -12,7 +12,7 @@ export default async (req, res) => {
   const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:8080",
-    "https://flowbase-frontend.vercel.app"
+    "https://flowbaseapp.vercel.app"
   ];
   
   const origin = req.headers.origin;
