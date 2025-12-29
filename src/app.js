@@ -14,7 +14,12 @@ import notification from "./routes/notification.routes.js";
 
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = [process.env.BASE_URL];
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "https://flowbase-frontend.vercel.app",
+      "https://flowbaseapp.vercel.app"
+    ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
