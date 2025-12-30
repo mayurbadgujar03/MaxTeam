@@ -229,7 +229,7 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     subject: "Resend email verification on MaxTeam",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/user/verify-email/${unHashedToken}`,
+      `${process.env.BASE_URL}/auth/verify-email/${unHashedToken}`,
       user.emailVerificationExpiry,
     ),
   });
