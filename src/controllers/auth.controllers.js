@@ -192,34 +192,31 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
-    return res.status(400).json(new ApiError(400, "All feilds are required"));
+    return res.status(400).json(new ApiError(400, "All fields are required"));
   }
 
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "User with this email doesn't exist"));
+    return res.status(400).json(new ApiError(400, "User with this email doesn't exist"));
   }
 
   if (user.isEmailVerified) {
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, "If this account exists, it is already verified"),
-      );
+    return res.status(200).json(new ApiResponse(200, "This account exists, it is already verified"));
   }
 
-  const { hashedToken, unHashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
+  const now = Date.now();
+  if (user.emailVerificationExpiry && user.updatedAt) {
+    const lastTokenGenerated = new Date(user.updatedAt).getTime();
+    if (now - lastTokenGenerated < 60 * 1000) {
+      return res.status(429).json(new ApiError(429, "Please wait a minute for the previous email to arrive."));
+    }
+  }
+
+  const { hashedToken, unHashedToken, tokenExpiry } = user.generateTemporaryToken();
 
   if (!hashedToken || !unHashedToken || !tokenExpiry) {
-    return res
-      .status(400)
-      .json(
-        new ApiError(400, "Failed to generate verification token for new user"),
-      );
+    return res.status(400).json(new ApiError(400, "Failed to generate verification token for new user"));
   }
 
   user.emailVerificationToken = hashedToken;
@@ -237,15 +234,7 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     ),
   });
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { userId: user._id },
-        "Verification email resent successfully",
-      ),
-    );
+  return res.status(200).json(new ApiResponse(200, { userId: user._id }, "Verification email resent successfully"));
 });
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {

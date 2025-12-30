@@ -3,7 +3,7 @@ import { Link, useParams, useLocation } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 
 export default function VerifyEmailPage() {
   const { token } = useParams();
@@ -12,15 +12,42 @@ export default function VerifyEmailPage() {
 
   const [status, setStatus] = useState('pending');
   const [error, setError] = useState('');
+  const [isResending, setIsResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('resendCountdown');
+    if (saved) {
+      const { timestamp } = JSON.parse(saved);
+      const diff = Math.floor((Date.now() - timestamp) / 1000);
+      if (diff < 60) {
+        setCountdown(60 - diff);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            localStorage.removeItem('resendCountdown');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   useEffect(() => {
     if (token) {
       setStatus('verifying');
-      console.log('Verifying token:', token);
       authApi
         .verifyEmail(token)
         .then((response) => {
-          console.log('Verification response:', response);
           if (response.message && response.message.includes('already verified')) {
             setStatus('success');
           } else {
@@ -28,12 +55,32 @@ export default function VerifyEmailPage() {
           }
         })
         .catch((err) => {
-          console.error('Verification error:', err);
           setStatus('error');
           setError(err.message || 'Invalid or expired verification link');
         });
     }
   }, [token]);
+
+  const handleResendEmail = async () => {
+    if (!email) return;
+    setIsResending(true);
+    setError('');
+    try {
+      const response = await authApi.resendEmailVerification(email);
+      setIsResending(false);
+      setCountdown(60);
+      localStorage.setItem('resendCountdown', JSON.stringify({ timestamp: Date.now() }));
+    } catch (err) {
+      setIsResending(false);
+      if (err.statusCode === 429) {
+        setCountdown(60);
+        localStorage.setItem('resendCountdown', JSON.stringify({ timestamp: Date.now() }));
+        alert('Email already sent! Please check your spam folder.');
+      } else {
+        setError(err.message || 'Failed to resend email.');
+      }
+    }
+  };
 
   const renderContent = () => {
     if (status === 'verifying') {
@@ -111,11 +158,23 @@ export default function VerifyEmailPage() {
             <span className="font-medium text-foreground">{email || 'your email'}</span>
           </p>
         </div>
+        <div className="flex flex-col items-center gap-2">
+          <Button
+            onClick={handleResendEmail}
+            disabled={isResending || countdown > 0}
+            className="w-full flex items-center justify-center"
+            variant="outline"
+          >
+            {isResending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {countdown > 0 ? `Resend in ${countdown}s...` : 'Resend Email'}
+          </Button>
+        </div>
         <p className="text-center text-xs text-muted-foreground">
-          Didn't receive the email? Check your spam folder or{' '}
-          <Link to="/auth/register" className="text-foreground hover:underline">
-            try again
-          </Link>
+          Didn't receive the email? Check your spam folder or click resend above.
         </p>
       </div>
     );
