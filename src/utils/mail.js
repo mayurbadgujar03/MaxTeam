@@ -1,7 +1,6 @@
 import Mailgen from "mailgen";
-import nodemailer from "nodemailer";
-
 import { ApiError } from "../utils/api-error.js";
+import { Resend } from "resend";
 
 const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
@@ -15,17 +14,10 @@ const sendEmail = async (options) => {
   const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    auth: {
-      user: process.env.MAIL_SMTP_USER,
-      pass: process.env.MAIL_SMTP_PASS,
-    },
-  });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const mail = {
-    from: "mayurbadgujar873@gmail.com",
+    from: "Flowbase <team@mayurbadgujar.me>",
     to: options.email,
     subject: options.subject,
     text: emailTextual,
@@ -33,7 +25,7 @@ const sendEmail = async (options) => {
   };
 
   try {
-    await transporter.sendMail(mail);
+    await resend.emails.send(mail);
   } catch (error) {
     throw new ApiError(400, "Failed to send email");
   }
