@@ -61,14 +61,6 @@ const createTask = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Title is required"));
   }
 
-  let attachments = [];
-  if (req.files && req.files.length > 0) {
-    attachments = req.files.map((file) => ({
-      url: `/images/${file.filename}.jpg`,
-      mimetype: file.mimetype,
-      size: file.size,
-    }));
-  }
 
   const task = await ProjectTask.create({
     title,
@@ -76,7 +68,6 @@ const createTask = asyncHandler(async (req, res) => {
     project: projectId,
     assignedBy: req.user._id,
     assignedTo: assignedTo || null,
-    attachments,
     status,
   });
 
@@ -162,12 +153,6 @@ const updateTask = asyncHandler(async (req, res) => {
         new ApiError(403, "Members can only update task status")
       );
     }
-
-    if (req.files && req.files.length > 0) {
-      return res.status(403).json(
-        new ApiError(403, "Members cannot upload attachments")
-      );
-    }
   }
   const oldStatus = task.status;
   const oldAssignedTo = task.assignedTo;
@@ -177,14 +162,6 @@ const updateTask = asyncHandler(async (req, res) => {
   if (status) task.status = status;
   if (assignedTo !== undefined) task.assignedTo = assignedTo;
 
-  if (req.files && req.files.length > 0) {
-    const newFiles = req.files.map((file) => ({
-      url: `/images/${file.filename}`,
-      mimetype: file.mimetype,
-      size: file.size,
-    }));
-    task.attachments.push(...newFiles);
-  }
 
   await task.save();
 
