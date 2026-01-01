@@ -22,7 +22,6 @@
     "link-preview-js": "^4.0.0",
     "mailgen": "^2.0.29",
     "mongoose": "^8.16.5",
-    "multer": "^2.0.2",
     "resend": "^6.6.0"
   },
   "devDependencies": {

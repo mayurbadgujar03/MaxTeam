@@ -8,6 +8,7 @@ import { UserRolesEnum } from "../utils/constants.js";
 import { Notification } from "../models/notification.models.js";
 import { Project } from "../models/project.models.js";
 import { User } from "../models/user.models.js";
+import { fetchLinkMetadata } from "../utils/link-utils.js";
 import mongoose from "mongoose";
 
 const getTasks = asyncHandler(async (req, res) => {
@@ -54,13 +55,19 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, assignedTo, status } = req.body;
+  const { title, description, assignedTo, status, links } = req.body;
   const { projectId } = req.params;
 
   if (!title) {
     return res.status(400).json(new ApiError(400, "Title is required"));
   }
 
+  let linkMetadata = [];
+  if (Array.isArray(links) && links.length > 0) {
+    linkMetadata = await Promise.all(
+      links.map(async (url) => fetchLinkMetadata(url))
+    );
+  }
 
   const task = await ProjectTask.create({
     title,
@@ -69,6 +76,7 @@ const createTask = asyncHandler(async (req, res) => {
     assignedBy: req.user._id,
     assignedTo: assignedTo || null,
     status,
+    links: linkMetadata,
   });
 
   const project = await Project.findById(projectId);
@@ -115,7 +123,7 @@ const createTask = asyncHandler(async (req, res) => {
 
 const updateTask = asyncHandler(async (req, res) => {
   const { taskId, projectId } = req.params;
-  const { title, description, status, assignedTo } = req.body;
+  const { title, description, status, assignedTo, links } = req.body;
 
   const task = await ProjectTask.findById(taskId);
   if (!task) {
@@ -161,6 +169,14 @@ const updateTask = asyncHandler(async (req, res) => {
   if (description) task.description = description;
   if (status) task.status = status;
   if (assignedTo !== undefined) task.assignedTo = assignedTo;
+
+  if (Array.isArray(links) && links.length > 0) {
+    const newLinkMetadata = await Promise.all(
+      links.map(async (url) => fetchLinkMetadata(url))
+    );
+    if (!Array.isArray(task.links)) task.links = [];
+    task.links.push(...newLinkMetadata);
+  }
 
 
   await task.save();

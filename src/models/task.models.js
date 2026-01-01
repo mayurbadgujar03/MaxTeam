@@ -30,6 +30,18 @@ const taskSchema = new Schema(
       enum: AvailableTaskStatuses,
       default: TaskStatusEnum.TODO,
     },
+    links: {
+      type: [
+        {
+          url: { type: String, required: true },
+          title: { type: String },
+          siteName: { type: String },
+          description: { type: String },
+          image: { type: String },
+        }
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,
