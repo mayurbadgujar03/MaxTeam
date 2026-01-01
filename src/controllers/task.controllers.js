@@ -65,7 +65,7 @@ const createTask = asyncHandler(async (req, res) => {
   let linkMetadata = [];
   if (Array.isArray(links) && links.length > 0) {
     linkMetadata = await Promise.all(
-      links.map(async (url) => fetchLinkMetadata(url))
+      links.map(async (url) => fetchLinkMetadata(url)),
     );
   }
 
@@ -102,8 +102,10 @@ const createTask = asyncHandler(async (req, res) => {
   }
 
   for (const member of projectMembers) {
-    if (member.user.toString() !== req.user._id.toString() && 
-        (!assignedTo || member.user.toString() !== assignedTo.toString())) {
+    if (
+      member.user.toString() !== req.user._id.toString() &&
+      (!assignedTo || member.user.toString() !== assignedTo.toString())
+    ) {
       await Notification.create({
         userId: member.user,
         type: "task_assigned",
@@ -136,30 +138,33 @@ const updateTask = asyncHandler(async (req, res) => {
   });
 
   if (!memberRecord) {
-    return res.status(403).json(
-      new ApiError(403, "You are not a member of this project")
-    );
+    return res
+      .status(403)
+      .json(new ApiError(403, "You are not a member of this project"));
   }
 
   const userRole = memberRecord.role;
 
   if (userRole === UserRolesEnum.MEMBER) {
-    if (!task.assignedTo || task.assignedTo.toString() !== req.user._id.toString()) {
-      return res.status(403).json(
-        new ApiError(403, "You can only update tasks assigned to you")
-      );
+    if (
+      !task.assignedTo ||
+      task.assignedTo.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "You can only update tasks assigned to you"));
     }
 
     const updateFields = Object.keys(req.body);
     const allowedFields = ["status"];
     const hasDisallowedFields = updateFields.some(
-      (field) => !allowedFields.includes(field)
+      (field) => !allowedFields.includes(field),
     );
 
     if (hasDisallowedFields) {
-      return res.status(403).json(
-        new ApiError(403, "Members can only update task status")
-      );
+      return res
+        .status(403)
+        .json(new ApiError(403, "Members can only update task status"));
     }
   }
   const oldStatus = task.status;
@@ -170,14 +175,20 @@ const updateTask = asyncHandler(async (req, res) => {
   if (status) task.status = status;
   if (assignedTo !== undefined) task.assignedTo = assignedTo;
 
-  if (Array.isArray(links) && links.length > 0) {
-    const newLinkMetadata = await Promise.all(
-      links.map(async (url) => fetchLinkMetadata(url))
-    );
-    if (!Array.isArray(task.links)) task.links = [];
-    task.links.push(...newLinkMetadata);
+  if (links !== undefined) {
+    if (Array.isArray(links)) {
+      const processedLinks = await Promise.all(
+        links.map(async (item) => {
+          if (typeof item === "string") {
+            return await fetchLinkMetadata(item);
+          } else {
+            return item;
+          }
+        }),
+      );
+      task.links = processedLinks;
+    }
   }
-
 
   await task.save();
 

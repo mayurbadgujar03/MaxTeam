@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Paperclip, MessageSquare, Trash2 } from 'lucide-react';
+import { Paperclip, MessageSquare, Trash2, Link as LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks = false }) {
@@ -39,29 +39,26 @@ export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks =
               </Button>
             )}
           </div>
-          
           {task.description && (
             <p className="text-xs text-muted-foreground line-clamp-2">
               {task.description}
             </p>
           )}
-
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {task.attachments?.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Paperclip className="h-3 w-3" />
-                  {task.attachments.length}
-                </div>
-              )}
               {task.subtasks?.length > 0 && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MessageSquare className="h-3 w-3" />
                   {task.subtasks.filter(s => s.isCompleted).length}/{task.subtasks.length}
                 </div>
               )}
+              {task.links && task.links.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <LinkIcon className="h-3 w-3" />
+                  {task.links.length}
+                </div>
+              )}
             </div>
-
             {task.assignedTo && (
               <Avatar className="h-6 w-6">
                 <AvatarImage src={task.assignedTo.avatar} />

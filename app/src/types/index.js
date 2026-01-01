@@ -49,7 +49,7 @@
  * @property {string} projectId
  * @property {User} [assignedTo]
  * @property {User} [assignedBy]
- * @property {Attachment[]} attachments
+ * @property {Array<{ _id: string, url: string, title?: string, siteName?: string, description?: string, image?: string }>} links
  * @property {Subtask[]} subtasks
  * @property {string} createdAt
  * @property {string} updatedAt
@@ -98,6 +98,7 @@
  * @property {string} [description]
  * @property {TaskStatus} [status]
  * @property {string} [assignedToId]
+ * @property {string[]} [links] // Array of URL strings
  * 
  * @typedef {Object} CreateNoteInput
  * @property {string} title

@@ -50,11 +50,13 @@ export function CreateTaskModal({
   const [status, setStatus] = useState(defaultStatus);
   const [assignedTo, setAssignedTo] = useState('');
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [links, setLinks] = useState([]);
+  const [currentLink, setCurrentLink] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: () => tasksApi.create(projectId, { title, description, status, assignedTo: assignedTo || undefined }),
+    mutationFn: () => tasksApi.create(projectId, { title, description, status, assignedTo: assignedTo || undefined, links }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       toast({
@@ -66,6 +68,8 @@ export function CreateTaskModal({
       setDescription('');
       setStatus('todo');
       setAssignedTo('');
+      setLinks([]);
+      setCurrentLink('');
     },
     onError: (error) => {
       toast({
@@ -82,6 +86,21 @@ export function CreateTaskModal({
     createMutation.mutate();
   };
 
+  const isValidUrl = (url) => {
+    return /^https?:\/\//i.test(url);
+  };
+
+  const handleAddLink = () => {
+    const trimmed = currentLink.trim();
+    if (!trimmed || !isValidUrl(trimmed)) return;
+    setLinks((prev) => [...prev, trimmed]);
+    setCurrentLink('');
+  };
+
+  const handleRemoveLink = (idx) => {
+    setLinks((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -90,9 +109,8 @@ export function CreateTaskModal({
           <DialogDescription>
             Add a new task to this project.
           </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+        </DialogHeader><form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input
@@ -211,6 +229,37 @@ export function CreateTaskModal({
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Resources / Links</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Paste URL here..."
+                  value={currentLink}
+                  onChange={e => setCurrentLink(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddLink();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={handleAddLink} disabled={!isValidUrl(currentLink)}>
+                  Add
+                </Button>
+              </div>
+              {links.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {links.map((link, idx) => (
+                    <li key={link + idx} className="flex items-center gap-2 text-sm">
+                      <span className="truncate max-w-xs" title={link}>{link}</span>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => handleRemoveLink(idx)} aria-label="Remove link">
+                        ×
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           <DialogFooter>
