@@ -139,7 +139,9 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="email-notifications">Email Notifications</Label>
+              <Label htmlFor="email-notifications">Email Notifications
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold align-middle animate-slow-blink">BETA</span>
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Receive email updates about your projects
               </p>
@@ -173,7 +175,9 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="task-reminders">Task Reminders</Label>
+              <Label htmlFor="task-reminders">Task Reminders
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold align-middle animate-slow-blink">BETA</span>
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Get reminded about upcoming task deadlines
               </p>
