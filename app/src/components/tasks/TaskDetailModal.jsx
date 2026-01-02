@@ -1,3 +1,4 @@
+import { ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '@/api/tasks';
@@ -37,23 +38,70 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, Paperclip, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+function LinkPreviewCard({ link }) {
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 border rounded-lg p-2 hover:bg-muted/50 transition group"
+    >
+      {link.image ? (
+        <img src={link.image} alt={link.title || link.url} className="w-12 h-12 object-cover rounded-md bg-muted" />
+      ) : (
+        <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md">
+          <LinkIcon className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm truncate group-hover:underline">{link.title || link.url}</div>
+        {link.siteName && (
+          <div className="text-xs text-muted-foreground truncate">{link.siteName}</div>
+        )}
+        {link.description && (
+          <div className="text-xs text-muted-foreground truncate">{link.description}</div>
+        )}
+      </div>
+      <ExternalLink className="h-4 w-4 text-muted-foreground ml-2 shrink-0" />
+    </a>
+  );
+}
+
 export function TaskDetailModal({ task, projectId, open, onOpenChange, canManageTasks = false }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('todo');
+  const [links, setLinks] = useState([]);
+  const [currentLink, setCurrentLink] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Update local state when task changes
   useEffect(() => {
     if (task) {
       setTitle(task.title);
       setDescription(task.description || '');
       setStatus(task.status);
+      setLinks(task.links || []);
+      setCurrentLink('');
     }
   }, [task]);
+  // Link validation (basic URL regex)
+  const isValidUrl = (url) => {
+    return /^https?:\/\//i.test(url);
+  };
+
+  const handleAddLink = () => {
+    const trimmed = currentLink.trim();
+    if (!trimmed || !isValidUrl(trimmed)) return;
+    setLinks((prev) => [...prev, trimmed]);
+    setCurrentLink('');
+  };
+
+  const handleRemoveLink = (idx) => {
+    setLinks((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const updateMutation = useMutation({
     mutationFn: (data) =>
@@ -92,7 +140,6 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
   const addSubtaskMutation = useMutation({
     mutationFn: (title) => subtasksApi.create(projectId, task._id, { title }),
     onSuccess: () => {
-      // Refetch active queries to update UI immediately
       queryClient.refetchQueries({ queryKey: ['tasks', projectId], type: 'active' });
       setNewSubtask('');
       toast({ title: 'Subtask added' });
@@ -124,7 +171,6 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
   const deleteSubtaskMutation = useMutation({
     mutationFn: (subtaskId) => subtasksApi.delete(projectId, task._id, subtaskId),
     onSuccess: () => {
-      // Refetch active queries to update UI immediately
       queryClient.refetchQueries({ queryKey: ['tasks', projectId], type: 'active' });
       toast({ title: 'Subtask deleted' });
     },
@@ -140,7 +186,9 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
   if (!task) return null;
 
   const handleSave = () => {
-    updateMutation.mutate({ title, description, status });
+    // Only send URLs, not objects with metadata
+    const linksToSend = links.map(l => typeof l === 'string' ? l : l.url);
+    updateMutation.mutate({ title, description, status, links: linksToSend });
   };
 
   const handleAddSubtask = (e) => {
@@ -229,23 +277,50 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
             </div>
           )}
 
-          {/* Attachments */}
-          {task.attachments?.length > 0 && (
-            <div className="space-y-2">
-              <Label>Attachments</Label>
-              <div className="space-y-2">
-                {task.attachments.map((attachment) => (
-                  <div
-                    key={attachment._id}
-                    className="flex items-center gap-2 rounded-lg border p-2"
-                  >
-                    <Paperclip className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm truncate">{attachment.filename}</span>
-                  </div>
+          {/* Resources / Links (Editable) */}
+          <div className="space-y-2">
+            <Label>Resources / Links</Label>
+            {canManageTasks && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Paste URL here..."
+                  value={currentLink}
+                  onChange={e => setCurrentLink(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddLink();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={handleAddLink} disabled={!isValidUrl(currentLink)}>
+                  Add
+                </Button>
+              </div>
+            )}
+            {links.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {links.map((link, idx) => (
+                  <li key={link._id || link.url || link + idx} className="flex items-center gap-2 text-sm">
+                    <span className="truncate max-w-xs" title={link.url || link}>{link.title || link.url || link}</span>
+                    {canManageTasks && (
+                      <Button type="button" size="icon" variant="ghost" onClick={() => handleRemoveLink(idx)} aria-label="Remove link">
+                        ×
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* Show previews for links with metadata */}
+            {links.filter(l => l.url).length > 0 && (
+              <div className="space-y-2 mt-2">
+                {links.filter(l => l.url).map((link) => (
+                  <LinkPreviewCard key={link._id || link.url} link={link} />
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Subtasks List */}
           <div className="space-y-3">

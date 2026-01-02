@@ -19,9 +19,9 @@
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
+    "link-preview-js": "^4.0.0",
     "mailgen": "^2.0.29",
     "mongoose": "^8.16.5",
-    "multer": "^2.0.2",
     "resend": "^6.6.0"
   },
   "devDependencies": {

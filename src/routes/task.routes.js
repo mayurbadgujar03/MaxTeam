@@ -3,7 +3,6 @@ import {
   isLoggedIn,
   validateProjectPermission,
 } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
 import { AvailableUserRoles, UserRolesEnum } from "../utils/constants.js";
 import {
   createSubTask,
@@ -29,7 +28,6 @@ router.post(
   "/projects/:projectId/tasks",
   isLoggedIn,
   validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
-  upload.array("attachments", 5),
   createTask,
 );
 
@@ -39,7 +37,6 @@ router
   .put(
     isLoggedIn,
     validateProjectPermission(AvailableUserRoles),
-    upload.array("attachments", 5),
     updateTask,
   )
   .delete(

@@ -8,6 +8,7 @@ import { UserRolesEnum } from "../utils/constants.js";
 import { Notification } from "../models/notification.models.js";
 import { Project } from "../models/project.models.js";
 import { User } from "../models/user.models.js";
+import { fetchLinkMetadata } from "../utils/link-utils.js";
 import mongoose from "mongoose";
 
 const getTasks = asyncHandler(async (req, res) => {
@@ -54,20 +55,18 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, assignedTo, status } = req.body;
+  const { title, description, assignedTo, status, links } = req.body;
   const { projectId } = req.params;
 
   if (!title) {
     return res.status(400).json(new ApiError(400, "Title is required"));
   }
 
-  let attachments = [];
-  if (req.files && req.files.length > 0) {
-    attachments = req.files.map((file) => ({
-      url: `/images/${file.filename}.jpg`,
-      mimetype: file.mimetype,
-      size: file.size,
-    }));
+  let linkMetadata = [];
+  if (Array.isArray(links) && links.length > 0) {
+    linkMetadata = await Promise.all(
+      links.map(async (url) => fetchLinkMetadata(url)),
+    );
   }
 
   const task = await ProjectTask.create({
@@ -76,8 +75,8 @@ const createTask = asyncHandler(async (req, res) => {
     project: projectId,
     assignedBy: req.user._id,
     assignedTo: assignedTo || null,
-    attachments,
     status,
+    links: linkMetadata,
   });
 
   const project = await Project.findById(projectId);
@@ -103,8 +102,10 @@ const createTask = asyncHandler(async (req, res) => {
   }
 
   for (const member of projectMembers) {
-    if (member.user.toString() !== req.user._id.toString() && 
-        (!assignedTo || member.user.toString() !== assignedTo.toString())) {
+    if (
+      member.user.toString() !== req.user._id.toString() &&
+      (!assignedTo || member.user.toString() !== assignedTo.toString())
+    ) {
       await Notification.create({
         userId: member.user,
         type: "task_assigned",
@@ -124,7 +125,7 @@ const createTask = asyncHandler(async (req, res) => {
 
 const updateTask = asyncHandler(async (req, res) => {
   const { taskId, projectId } = req.params;
-  const { title, description, status, assignedTo } = req.body;
+  const { title, description, status, assignedTo, links } = req.body;
 
   const task = await ProjectTask.findById(taskId);
   if (!task) {
@@ -137,36 +138,33 @@ const updateTask = asyncHandler(async (req, res) => {
   });
 
   if (!memberRecord) {
-    return res.status(403).json(
-      new ApiError(403, "You are not a member of this project")
-    );
+    return res
+      .status(403)
+      .json(new ApiError(403, "You are not a member of this project"));
   }
 
   const userRole = memberRecord.role;
 
   if (userRole === UserRolesEnum.MEMBER) {
-    if (!task.assignedTo || task.assignedTo.toString() !== req.user._id.toString()) {
-      return res.status(403).json(
-        new ApiError(403, "You can only update tasks assigned to you")
-      );
+    if (
+      !task.assignedTo ||
+      task.assignedTo.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "You can only update tasks assigned to you"));
     }
 
     const updateFields = Object.keys(req.body);
     const allowedFields = ["status"];
     const hasDisallowedFields = updateFields.some(
-      (field) => !allowedFields.includes(field)
+      (field) => !allowedFields.includes(field),
     );
 
     if (hasDisallowedFields) {
-      return res.status(403).json(
-        new ApiError(403, "Members can only update task status")
-      );
-    }
-
-    if (req.files && req.files.length > 0) {
-      return res.status(403).json(
-        new ApiError(403, "Members cannot upload attachments")
-      );
+      return res
+        .status(403)
+        .json(new ApiError(403, "Members can only update task status"));
     }
   }
   const oldStatus = task.status;
@@ -177,13 +175,19 @@ const updateTask = asyncHandler(async (req, res) => {
   if (status) task.status = status;
   if (assignedTo !== undefined) task.assignedTo = assignedTo;
 
-  if (req.files && req.files.length > 0) {
-    const newFiles = req.files.map((file) => ({
-      url: `/images/${file.filename}`,
-      mimetype: file.mimetype,
-      size: file.size,
-    }));
-    task.attachments.push(...newFiles);
+  if (links !== undefined) {
+    if (Array.isArray(links)) {
+      const processedLinks = await Promise.all(
+        links.map(async (item) => {
+          if (typeof item === "string") {
+            return await fetchLinkMetadata(item);
+          } else {
+            return item;
+          }
+        }),
+      );
+      task.links = processedLinks;
+    }
   }
 
   await task.save();
