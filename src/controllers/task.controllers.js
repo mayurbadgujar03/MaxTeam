@@ -84,7 +84,7 @@ const createTask = asyncHandler(async (req, res) => {
   const projectMembers = await ProjectMember.find({ project: projectId });
 
   if (assignedTo) {
-    await Notification.create({
+    const notification = await Notification.create({
       userId: assignedTo,
       type: "task_assigned",
       message: `You were assigned to "${title}"`,
@@ -99,6 +99,10 @@ const createTask = asyncHandler(async (req, res) => {
         actorId: creator._id,
       },
     });
+    const io = req.app.get("io");
+    if (io) {
+      io.to(notification.userId.toString()).emit("notification_received", notification);
+    }
   }
 
   for (const member of projectMembers) {
@@ -106,7 +110,7 @@ const createTask = asyncHandler(async (req, res) => {
       member.user.toString() !== req.user._id.toString() &&
       (!assignedTo || member.user.toString() !== assignedTo.toString())
     ) {
-      await Notification.create({
+      const notification = await Notification.create({
         userId: member.user,
         type: "task_assigned",
         message: `New task created: "${title}"`,
@@ -115,6 +119,10 @@ const createTask = asyncHandler(async (req, res) => {
         taskId: task._id,
         read: false,
       });
+      const io = req.app.get("io");
+      if (io) {
+        io.to(notification.userId.toString()).emit("notification_received", notification);
+      }
     }
   }
 
@@ -197,7 +205,7 @@ const updateTask = asyncHandler(async (req, res) => {
   const projectMembers = await ProjectMember.find({ project: projectId });
 
   if (assignedTo && assignedTo !== oldAssignedTo?.toString()) {
-    await Notification.create({
+    const notification = await Notification.create({
       userId: assignedTo,
       type: "task_assigned",
       message: `You were assigned to "${task.title}"`,
@@ -206,12 +214,16 @@ const updateTask = asyncHandler(async (req, res) => {
       taskId: task._id,
       read: false,
     });
+    const io = req.app.get("io");
+    if (io) {
+      io.to(notification.userId.toString()).emit("notification_received", notification);
+    }
   }
 
   if (status === "completed" && oldStatus !== "completed") {
     for (const member of projectMembers) {
       if (member.user.toString() !== req.user._id.toString()) {
-        await Notification.create({
+        const notification = await Notification.create({
           userId: member.user,
           type: "task_completed",
           message: `Task completed: "${task.title}"`,
@@ -220,12 +232,16 @@ const updateTask = asyncHandler(async (req, res) => {
           taskId: task._id,
           read: false,
         });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
       }
     }
   } else if (status || title || description) {
     for (const member of projectMembers) {
       if (member.user.toString() !== req.user._id.toString()) {
-        await Notification.create({
+        const notification = await Notification.create({
           userId: member.user,
           type: "task_assigned",
           message: `Task updated: "${task.title}"`,
@@ -234,6 +250,10 @@ const updateTask = asyncHandler(async (req, res) => {
           taskId: task._id,
           read: false,
         });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
       }
     }
   }
@@ -263,7 +283,7 @@ const deleteTask = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
+      const notification = await Notification.create({
         userId: member.user,
         type: "task_assigned",
         message: `Task deleted: "${taskTitle}"`,
@@ -271,6 +291,10 @@ const deleteTask = asyncHandler(async (req, res) => {
         projectId: projectId,
         read: false,
       });
+      const io = req.app.get("io");
+      if (io) {
+        io.to(notification.userId.toString()).emit("notification_received", notification);
+      }
     }
   }
 
@@ -301,7 +325,7 @@ const createSubTask = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
+      const notification = await Notification.create({
         userId: member.user,
         type: "task_assigned",
         message: `New subtask added to "${task.title}"`,
@@ -317,6 +341,10 @@ const createSubTask = asyncHandler(async (req, res) => {
           actorId: creator._id,
         },
       });
+      const io = req.app.get("io");
+      if (io) {
+        io.to(notification.userId.toString()).emit("notification_received", notification);
+      }
     }
   }
 
@@ -351,7 +379,7 @@ const updateSubTask = asyncHandler(async (req, res) => {
   if (isCompleted && !oldCompleted) {
     for (const member of projectMembers) {
       if (member.user.toString() !== req.user._id.toString()) {
-        await Notification.create({
+        const notification = await Notification.create({
           userId: member.user,
           type: "task_completed",
           message: `Subtask completed: "${subtask.title}"`,
@@ -367,12 +395,16 @@ const updateSubTask = asyncHandler(async (req, res) => {
             actorId: updater._id,
           },
         });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
       }
     }
   } else if (title || isCompleted !== undefined) {
     for (const member of projectMembers) {
       if (member.user.toString() !== req.user._id.toString()) {
-        await Notification.create({
+        const notification = await Notification.create({
           userId: member.user,
           type: "task_assigned",
           message: `Subtask updated in "${task.title}"`,
@@ -388,6 +420,10 @@ const updateSubTask = asyncHandler(async (req, res) => {
             actorId: updater._id,
           },
         });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
       }
     }
   }
@@ -419,7 +455,7 @@ const deleteSubTask = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
+      const notification = await Notification.create({
         userId: member.user,
         type: "task_assigned",
         message: `Subtask deleted from "${task.title}"`,
@@ -435,6 +471,10 @@ const deleteSubTask = asyncHandler(async (req, res) => {
           actorId: deleter._id,
         },
       });
+      const io = req.app.get("io");
+      if (io) {
+        io.to(notification.userId.toString()).emit("notification_received", notification);
+      }
     }
   }
 

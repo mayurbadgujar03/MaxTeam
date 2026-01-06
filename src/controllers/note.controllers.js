@@ -73,19 +73,23 @@ const createNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "project_updated",
-        message: `New note added in "${project.name}"`,
-        description: `${creator.fullname} added a new note`,
-        projectId: projectId,
-        read: false,
-        metadata: {
-          projectName: project.name,
-          actorName: creator.fullname,
-          actorId: creator._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "project_updated",
+          message: `New note added in "${project.name}"`,
+          description: `${creator.fullname} added a new note`,
+          projectId: projectId,
+          read: false,
+          metadata: {
+            projectName: project.name,
+            actorName: creator.fullname,
+            actorId: creator._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
@@ -120,19 +124,23 @@ const updateNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "project_updated",
-        message: `Note updated in "${project.name}"`,
-        description: `${updater.fullname} updated a note`,
-        projectId: existingNote.project,
-        read: false,
-        metadata: {
-          projectName: project.name,
-          actorName: updater.fullname,
-          actorId: updater._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "project_updated",
+          message: `Note updated in "${project.name}"`,
+          description: `${updater.fullname} updated a note`,
+          projectId: existingNote.project,
+          read: false,
+          metadata: {
+            projectName: project.name,
+            actorName: updater.fullname,
+            actorId: updater._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
@@ -156,19 +164,23 @@ const deleteNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "project_updated",
-        message: `Note deleted in "${project.name}"`,
-        description: `${deleter.fullname} deleted a note`,
-        projectId: note.project,
-        read: false,
-        metadata: {
-          projectName: project.name,
-          actorName: deleter.fullname,
-          actorId: deleter._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "project_updated",
+          message: `Note deleted in "${project.name}"`,
+          description: `${deleter.fullname} deleted a note`,
+          projectId: note.project,
+          read: false,
+          metadata: {
+            projectName: project.name,
+            actorName: deleter.fullname,
+            actorId: deleter._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
