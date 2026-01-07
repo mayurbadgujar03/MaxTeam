@@ -51,6 +51,8 @@ export default function ProjectDetailPage() {
       const handleProjectUpdate = () => {
         queryClient.invalidateQueries(["tasks", projectId]);
         queryClient.invalidateQueries(["notes", projectId]);
+        queryClient.invalidateQueries(["members", projectId]);
+        queryClient.invalidateQueries(["project", projectId]);
       };
       socket.on("project_data_updated", handleProjectUpdate);
 
@@ -71,11 +73,28 @@ export default function ProjectDetailPage() {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
-  const { data: projectData, isLoading: isProjectLoading } = useQuery({
+  const {
+    data: projectData,
+    isLoading: isProjectLoading,
+    isError,
+    error
+  } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => projectsApi.getById(projectId),
     enabled: !!projectId,
+    retry: false,
   });
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Access Revoked",
+        description: error?.message || "You have been removed from this project.",
+        variant: "destructive",
+      });
+      navigate("/projects");
+    }
+  }, [isError, error, navigate, toast]);
 
   const { data: tasksData, isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks", projectId],
