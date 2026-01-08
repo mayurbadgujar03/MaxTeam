@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '@/api/tasks';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
 import {
   Command,
   CommandEmpty,
@@ -35,8 +37,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, ChevronsUpDown, UserX } from 'lucide-react';
+import { Loader2, Check, ChevronsUpDown, UserX, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
 
 export function CreateTaskModal({ 
   projectId,
@@ -50,13 +53,14 @@ export function CreateTaskModal({
   const [status, setStatus] = useState(defaultStatus);
   const [assignedTo, setAssignedTo] = useState('');
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [dueDate, setDueDate] = useState(null);
   const [links, setLinks] = useState([]);
   const [currentLink, setCurrentLink] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: () => tasksApi.create(projectId, { title, description, status, assignedTo: assignedTo || undefined, links }),
+    mutationFn: () => tasksApi.create(projectId, { title, description, status, assignedTo: assignedTo || undefined, links, dueDate }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       toast({
@@ -70,6 +74,7 @@ export function CreateTaskModal({
       setAssignedTo('');
       setLinks([]);
       setCurrentLink('');
+      setDueDate(null);
     },
     onError: (error) => {
       toast({
@@ -109,18 +114,40 @@ export function CreateTaskModal({
           <DialogDescription>
             Add a new task to this project.
           </DialogDescription>
-        </DialogHeader><form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[70vh]">
+          <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-2">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                placeholder="What needs to be done?"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
+              <Label>Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={dueDate ? "outline" : "secondary"}
+                    className={cn("w-full justify-start text-left font-normal", !dueDate && "text-muted-foreground")}
+                    type="button"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(new Date(dueDate), "MMM d, yyyy") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate ? new Date(dueDate) : undefined}
+                    onSelect={(date) => setDueDate(date ? date.toISOString() : null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              placeholder="What needs to be done?"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
             <div className="space-y-2">
               <Label htmlFor="description">Description (optional)</Label>
               <Textarea

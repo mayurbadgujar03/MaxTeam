@@ -1,5 +1,6 @@
-import { ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { ExternalLink, Link as LinkIcon, Calendar as CalendarIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '@/api/tasks';
 import { subtasksApi } from '@/api/subtasks';
@@ -37,6 +38,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, Paperclip, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 function LinkPreviewCard({ link }) {
   return (
@@ -75,6 +78,7 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
   const [currentLink, setCurrentLink] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [dueDate, setDueDate] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -85,6 +89,7 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
       setStatus(task.status);
       setLinks(task.links || []);
       setCurrentLink('');
+      setDueDate(task.dueDate ? new Date(task.dueDate) : null);
     }
   }, [task]);
   // Link validation (basic URL regex)
@@ -186,9 +191,8 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
   if (!task) return null;
 
   const handleSave = () => {
-    // Only send URLs, not objects with metadata
     const linksToSend = links.map(l => typeof l === 'string' ? l : l.url);
-    updateMutation.mutate({ title, description, status, links: linksToSend });
+    updateMutation.mutate({ title, description, status, links: linksToSend, dueDate: dueDate ? dueDate.toISOString() : null });
   };
 
   const handleAddSubtask = (e) => {
@@ -259,6 +263,39 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Due Date */}
+          <div className="space-y-2">
+            <Label>Due Date</Label>
+            {canManageTasks ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={dueDate ? "outline" : "secondary"}
+                    className={cn("w-full justify-start text-left font-normal", !dueDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, "MMM d, yyyy") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={(date) => setDueDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              dueDate && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarIcon className="h-4 w-4" />
+                  {format(dueDate, "MMM d, yyyy")}
+                </div>
+              )
+            )}
           </div>
 
           {/* Assigned To */}
