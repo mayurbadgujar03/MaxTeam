@@ -2,8 +2,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Paperclip, MessageSquare, Trash2, Link as LinkIcon } from 'lucide-react';
+import { Paperclip, MessageSquare, Trash2, Link as LinkIcon, Calendar as CalendarIcon, Clock, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format, isPast, isToday } from 'date-fns';
 
 export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks = false }) {
   const statusVariant = {
@@ -68,6 +69,28 @@ export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks =
               </Avatar>
             )}
           </div>
+          {task.dueDate && (
+            <div className="flex items-center gap-2 mt-2 text-xs">
+              {(() => {
+                const due = new Date(task.dueDate);
+                const overdue = isPast(due) && !isToday(due) && task.status !== 'done';
+                if (overdue) {
+                  return (
+                    <span className="flex items-center text-destructive font-medium">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {format(due, 'MMM d')}
+                    </span>
+                  );
+                }
+                return (
+                  <span className="flex items-center text-muted-foreground">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    {format(due, 'MMM d')}
+                  </span>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

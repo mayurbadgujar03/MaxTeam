@@ -55,7 +55,7 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, assignedTo, status, links } = req.body;
+  const { title, description, assignedTo, status, links, dueDate } = req.body;
   const { projectId } = req.params;
 
   if (!title) {
@@ -77,6 +77,7 @@ const createTask = asyncHandler(async (req, res) => {
     assignedTo: assignedTo || null,
     status,
     links: linkMetadata,
+    dueDate: dueDate || null,
   });
 
   const project = await Project.findById(projectId);
@@ -138,7 +139,7 @@ const createTask = asyncHandler(async (req, res) => {
 
 const updateTask = asyncHandler(async (req, res) => {
   const { taskId, projectId } = req.params;
-  const { title, description, status, assignedTo, links } = req.body;
+  const { title, description, status, assignedTo, links, dueDate } = req.body;
 
   const task = await ProjectTask.findById(taskId);
   if (!task) {
@@ -187,6 +188,7 @@ const updateTask = asyncHandler(async (req, res) => {
   if (description) task.description = description;
   if (status) task.status = status;
   if (assignedTo !== undefined) task.assignedTo = assignedTo;
+  if (dueDate !== undefined) task.dueDate = dueDate;
 
   if (links !== undefined) {
     if (Array.isArray(links)) {

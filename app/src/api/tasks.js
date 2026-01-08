@@ -18,6 +18,7 @@ export const tasksApi = {
       status: data.status || 'todo',
       assignedTo: data.assignedTo || null,
       links: data.links || [],
+      dueDate: data.dueDate || null,
     });
     return response;
   },
@@ -29,6 +30,7 @@ export const tasksApi = {
     if (data.status) payload.status = data.status;
     if (data.assignedTo !== undefined) payload.assignedTo = data.assignedTo;
     if (data.links) payload.links = data.links;
+    if (data.dueDate !== undefined) payload.dueDate = data.dueDate;
     const response = await apiClient.put(`/task/${projectId}/n/${taskId}`, payload);
     return response;
   },
