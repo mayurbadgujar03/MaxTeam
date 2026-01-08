@@ -316,6 +316,7 @@ for (const member of otherMembers) {
       newMemberId: user._id,
     }
   });
+  const io = req.app.get("io");
   if (io) {
     io.to(notification.userId.toString()).emit("notification_received", notification);
   }
@@ -382,6 +383,7 @@ const deleteMember = asyncHandler(async (req, res) => {
             actorId: remover._id,
           },
         });
+        const io = req.app.get("io");
         if (io) {
           io.to(notification.userId.toString()).emit("notification_received", notification);
         }
@@ -466,6 +468,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
             actorId: updater._id,
           },
         });
+        const io = req.app.get("io");
         if (io) {
           io.to(notification.userId.toString()).emit("notification_received", notification);
         }

@@ -51,8 +51,6 @@ export default function ProjectDetailPage() {
       const handleProjectUpdate = () => {
         queryClient.invalidateQueries(["tasks", projectId]);
         queryClient.invalidateQueries(["notes", projectId]);
-        queryClient.invalidateQueries(["members", projectId]);
-        queryClient.invalidateQueries(["project", projectId]);
       };
       socket.on("project_data_updated", handleProjectUpdate);
 
@@ -158,7 +156,6 @@ export default function ProjectDetailPage() {
   const isAdmin = currentUserRole === "admin";
   const canManageTasks = isAdmin || currentUserRole === "project_admin";
 
-  // Update local state when project loads
   useEffect(() => {
     if (project) {
       setProjectName(project.name);

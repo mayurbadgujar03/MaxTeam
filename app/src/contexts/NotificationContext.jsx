@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { notificationsApi } from "@/api/notifications";
 import { useAuth } from "./AuthContext";
-import { useSocket } from "./SocketContext"; // 1. Import Socket Hook
-import { toast } from "sonner"; // 2. Import Toast for alerts
+import { useSocket } from "./SocketContext"; 
+import { toast } from "sonner"; 
 
 const NotificationContext = createContext(undefined);
 
@@ -12,12 +12,11 @@ export const NotificationProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const { isAuthenticated } = useAuth();
-  const { socket } = useSocket(); // 3. Get the socket instance
+  const { socket } = useSocket(); 
 
   const fetchNotifications = async () => {
     if (!isAuthenticated) return;
 
-    // Check if push notifications are enabled
     const pushEnabled = localStorage.getItem("pushNotifications") === "true";
     if (!pushEnabled) {
       setIsLoading(false);
@@ -84,55 +83,92 @@ export const NotificationProvider = ({ children }) => {
       setUnreadCount((prev) => prev + 1);
     }
   };
-
-  // --------------------------------------------------------
-  // 4. NEW: Real-Time Listener (Replaces Polling)
-  // --------------------------------------------------------
   useEffect(() => {
     if (!socket || !isAuthenticated) return;
 
     const handleNewNotification = (newNotification) => {
-      // Check setting before showing
+      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
+      if (!pushEnabled) return;
+      console.log("🔔 Socket: Notification Received", newNotification);
+      setNotifications((prev) => [newNotification, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+      toast(newNotification.message, {
+        description: newNotification.description,
+        action: {
+          label: "View",
+          onClick: () => console.log("Navigate to project..."),
+        },
+      });
+    };
+    socket.on("notification_received", handleNewNotification);
+    return () => {
+      socket.off("notification_received", handleNewNotification);
+    };
+  }, [socket, isAuthenticated]);
+  useEffect(() => {
+    if (!socket || !isAuthenticated) return;
+
+    const handleNewNotification = (newNotification) => {
       const pushEnabled = localStorage.getItem("pushNotifications") === "true";
       if (!pushEnabled) return;
 
       console.log("🔔 Socket: Notification Received", newNotification);
 
-      // A. Update the List (Put new one at the top)
       setNotifications((prev) => [newNotification, ...prev]);
 
-      // B. Increment Count
       setUnreadCount((prev) => prev + 1);
 
-      // C. Show Toast Popup
       toast(newNotification.message, {
         description: newNotification.description,
         action: {
           label: "View",
-          onClick: () => console.log("Navigate to project..."), // You can add navigation logic here
+          onClick: () => console.log("Navigate to project..."), 
         },
       });
     };
 
-    // Listen for the event from Backend
     socket.on("notification_received", handleNewNotification);
 
-    // Cleanup listener on unmount
     return () => {
       socket.off("notification_received", handleNewNotification);
     };
   }, [socket, isAuthenticated]);
 
-  // --------------------------------------------------------
-  // Existing Logic for Initial Fetch & Settings
-  // --------------------------------------------------------
+  useEffect(() => {
+    if (!socket || !isAuthenticated) return;
+
+    const handleNewNotification = (newNotification) => {
+      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
+      if (!pushEnabled) return;
+
+      console.log("🔔 Socket: Notification Received", newNotification);
+
+      setNotifications((prev) => [newNotification, ...prev]);
+
+      setUnreadCount((prev) => prev + 1);
+
+      toast(newNotification.message, {
+        description: newNotification.description,
+        action: {
+          label: "View",
+          onClick: () => console.log("Navigate to project..."), 
+        },
+      });
+    };
+
+    socket.on("notification_received", handleNewNotification);
+
+    return () => {
+      socket.off("notification_received", handleNewNotification);
+    };
+  }, [socket, isAuthenticated]);
+
   useEffect(() => {
     if (isAuthenticated) {
       const pushEnabled = localStorage.getItem("pushNotifications") === "true";
 
       if (pushEnabled) {
         fetchNotifications();
-        // NOTE: I Removed the setInterval polling here because we now use Sockets!
       } else {
         setNotifications([]);
         setUnreadCount(0);
@@ -145,7 +181,6 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  // Listen for changes to notification settings
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "pushNotifications" && isAuthenticated) {
