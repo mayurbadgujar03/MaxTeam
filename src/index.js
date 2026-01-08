@@ -1,56 +1,54 @@
 import app from "./app.js";
 import connectDB from "./db/index.js";
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: "./.env" });
 }
 
-let isConnected = false;
+const httpServer = createServer(app);
 
-export default async (req, res) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "https://flowbaseapp.vercel.app"
-  ];
-  
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || [
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "https://flowbaseapp.vercel.app"
+    ],
+    credentials: true
   }
-  
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,PUT,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+});
 
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
+app.set("io", io);
 
-  if (!isConnected) {
-    try {
-      await connectDB();
-      isConnected = true;
-    } catch (error) {
-      console.error("MongoDB connection failed:", error);
-      return res.status(500).json({ error: "Database connection failed" });
-    }
-  }
+io.on("connection", (socket) => {
+  console.log("New client connected", socket.id);
 
-  // Pass to Express app
-  return app(req, res);
-};
+  socket.on("join_project", (id) => {
+    socket.join(id);
+    console.log(`Socket ${socket.id} joined project room ${id}`);
+  });
 
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 8000;
-  connectDB()
-    .then(() => {
-      app.listen(PORT, () => console.log(`Server is running on port: ${PORT}`));
-    })
-    .catch((err) => {
-      console.error("MongoDB connection error", err);
-      process.exit(1);
+  socket.on("join_user", (id) => {
+    socket.join(id);
+    console.log(`Socket ${socket.id} joined user room ${id}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected", socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 8000;
+connectDB()
+  .then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`Server is running on port: ${PORT}`);
     });
-}
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error", err);
+    process.exit(1);
+  });

@@ -101,7 +101,7 @@ const createProject = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Failed to create project"));
   }
 
-  await Notification.create({
+  const notification = await Notification.create({
     userId: user._id,
     type: "project_added",
     message: `Project "${name}" created successfully`,
@@ -114,6 +114,10 @@ const createProject = asyncHandler(async (req, res) => {
       actorId: user._id,
     },
   });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(notification.userId.toString()).emit("notification_received", notification);
+  }
 
   return res
     .status(200)
@@ -145,19 +149,23 @@ const updateProject = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "project_updated",
-        message: `Project "${name}" was updated`,
-        description: `${updater.fullname} updated the project details`,
-        projectId: new mongoose.Types.ObjectId(projectId),
-        read: false,
-        metadata: {
-          projectName: name,
-          actorName: updater.fullname,
-          actorId: updater._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "project_updated",
+          message: `Project "${name}" was updated`,
+          description: `${updater.fullname} updated the project details`,
+          projectId: new mongoose.Types.ObjectId(projectId),
+          read: false,
+          metadata: {
+            projectName: name,
+            actorName: updater.fullname,
+            actorId: updater._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
@@ -181,18 +189,22 @@ const deleteProject = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "project_updated",
-        message: `Project "${projectName}" was deleted`,
-        description: `${deleter.fullname} deleted the project`,
-        read: false,
-        metadata: {
-          projectName: projectName,
-          actorName: deleter.fullname,
-          actorId: deleter._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "project_updated",
+          message: `Project "${projectName}" was deleted`,
+          description: `${deleter.fullname} deleted the project`,
+          read: false,
+          metadata: {
+            projectName: projectName,
+            actorName: deleter.fullname,
+            actorId: deleter._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
@@ -266,7 +278,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Member not created"));
   }
 
-  await Notification.create({
+  const notification = await Notification.create({
     userId: user._id,
     type: "project_added",
     message: `You were added to "${project.name}"`,
@@ -279,6 +291,10 @@ const addMemberToProject = asyncHandler(async (req, res) => {
       actorId: admin._id,
     },
   });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(notification.userId.toString()).emit("notification_received", notification);
+  }
 
   const projectMembers = await ProjectMember.find({ project: projectId });
 
@@ -287,7 +303,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   );
 
 for (const member of otherMembers) {
-  await Notification.create({
+  const notification = await Notification.create({
     userId: member.user,
     type: "member_joined",
     message: `${user.fullname} joined your project`,
@@ -300,6 +316,10 @@ for (const member of otherMembers) {
       newMemberId: user._id,
     }
   });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(notification.userId.toString()).emit("notification_received", notification);
+  }
 }
 
   return res
@@ -325,7 +345,7 @@ const deleteMember = asyncHandler(async (req, res) => {
   const remover = await User.findById(req.user._id);
   const removedUser = await User.findById(memberId);
 
-  await Notification.create({
+  const notification = await Notification.create({
     userId: new mongoose.Types.ObjectId(memberId),
     type: "member_removed",
     message: `You were removed from "${project.name}"`,
@@ -338,24 +358,32 @@ const deleteMember = asyncHandler(async (req, res) => {
       actorId: remover._id,
     },
   });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(notification.userId.toString()).emit("notification_received", notification);
+  }
 
   const projectMembers = await ProjectMember.find({ project: projectId });
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      await Notification.create({
-        userId: member.user,
-        type: "member_removed",
-        message: `${removedUser.fullname} left "${project.name}"`,
-        description: `${remover.fullname} removed a team member`,
-        projectId: new mongoose.Types.ObjectId(projectId),
-        read: false,
-        metadata: {
-          projectName: project.name,
-          removedUserName: removedUser.fullname,
-          actorName: remover.fullname,
-          actorId: remover._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: member.user,
+          type: "member_removed",
+          message: `${removedUser.fullname} left "${project.name}"`,
+          description: `${remover.fullname} removed a team member`,
+          projectId: new mongoose.Types.ObjectId(projectId),
+          read: false,
+          metadata: {
+            projectName: project.name,
+            removedUserName: removedUser.fullname,
+            actorName: remover.fullname,
+            actorId: remover._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
@@ -395,7 +423,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
   const updater = await User.findById(req.user._id);
   const updatedUser = await User.findById(memberId);
 
-  await Notification.create({
+  const notification = await Notification.create({
     userId: new mongoose.Types.ObjectId(memberId),
     type: "project_updated",
     message: `Your role in "${project.name}" was updated`,
@@ -410,26 +438,34 @@ const updateMemberRole = asyncHandler(async (req, res) => {
       actorId: updater._id,
     },
   });
+  const io = req.app.get("io");
+  if (io) {
+    io.to(notification.userId.toString()).emit("notification_received", notification);
+  }
 
   const projectMembers = await ProjectMember.find({ project: projectId });
   for (const projectMember of projectMembers) {
     if (projectMember.user.toString() !== req.user._id.toString() && 
         projectMember.user.toString() !== memberId.toString()) {
-      await Notification.create({
-        userId: projectMember.user,
-        type: "project_updated",
-        message: `Team role updated in "${project.name}"`,
-        description: `${updater.fullname} changed ${updatedUser.fullname}'s role to ${role}`,
-        projectId: new mongoose.Types.ObjectId(projectId),
-        read: false,
-        metadata: {
-          projectName: project.name,
-          updatedUserName: updatedUser.fullname,
-          newRole: role,
-          actorName: updater.fullname,
-          actorId: updater._id,
-        },
-      });
+        const notification = await Notification.create({
+          userId: projectMember.user,
+          type: "project_updated",
+          message: `Team role updated in "${project.name}"`,
+          description: `${updater.fullname} changed ${updatedUser.fullname}'s role to ${role}`,
+          projectId: new mongoose.Types.ObjectId(projectId),
+          read: false,
+          metadata: {
+            projectName: project.name,
+            updatedUserName: updatedUser.fullname,
+            newRole: role,
+            actorName: updater.fullname,
+            actorId: updater._id,
+          },
+        });
+        const io = req.app.get("io");
+        if (io) {
+          io.to(notification.userId.toString()).emit("notification_received", notification);
+        }
     }
   }
 
