@@ -322,6 +322,9 @@ for (const member of otherMembers) {
   }
 }
 
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "member_update" });
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, member, "Member created successfully"));
@@ -387,6 +390,9 @@ const deleteMember = asyncHandler(async (req, res) => {
     }
   }
 
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "member_update" });
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, deletedMember, "Member deleted successfully"));
@@ -469,6 +475,9 @@ const updateMemberRole = asyncHandler(async (req, res) => {
     }
   }
 
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "member_update" });
+  }
   return res
     .status(200)
     .json(

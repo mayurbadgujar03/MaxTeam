@@ -71,11 +71,28 @@ export default function ProjectDetailPage() {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
-  const { data: projectData, isLoading: isProjectLoading } = useQuery({
+  const {
+    data: projectData,
+    isLoading: isProjectLoading,
+    isError,
+    error
+  } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => projectsApi.getById(projectId),
     enabled: !!projectId,
+    retry: false,
   });
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Access Revoked",
+        description: error?.message || "You have been removed from this project.",
+        variant: "destructive",
+      });
+      navigate("/projects");
+    }
+  }, [isError, error, navigate, toast]);
 
   const { data: tasksData, isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks", projectId],
@@ -139,7 +156,6 @@ export default function ProjectDetailPage() {
   const isAdmin = currentUserRole === "admin";
   const canManageTasks = isAdmin || currentUserRole === "project_admin";
 
-  // Update local state when project loads
   useEffect(() => {
     if (project) {
       setProjectName(project.name);

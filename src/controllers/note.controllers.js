@@ -93,6 +93,11 @@ const createNote = asyncHandler(async (req, res) => {
     }
   }
 
+  const io = req.app.get("io");
+  if (io) {
+    const room = projectId || (note && note.project);
+    io.to(room.toString()).emit("project_data_updated", { type: "note_update" });
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, populatedNote, "Notes Created successfully"));
@@ -144,6 +149,11 @@ const updateNote = asyncHandler(async (req, res) => {
     }
   }
 
+  const io = req.app.get("io");
+  if (io) {
+    const room = existingNote.project;
+    io.to(room.toString()).emit("project_data_updated", { type: "note_update" });
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, note, "Notes updated successfully"));
@@ -186,6 +196,11 @@ const deleteNote = asyncHandler(async (req, res) => {
 
   await ProjectNote.findByIdAndDelete(noteId);
 
+  const io = req.app.get("io");
+  if (io) {
+    const room = note.project;
+    io.to(room.toString()).emit("project_data_updated", { type: "note_update" });
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, note, "Notes deleted successfully"));

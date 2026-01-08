@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { projectsApi } from '@/api/projects';
@@ -20,6 +22,23 @@ import { cn } from '@/lib/utils';
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleNotification = () => {
+        queryClient.invalidateQueries(["projects"]);
+      };
+
+      socket.on("notification_received", handleNotification);
+
+      return () => {
+        socket.off("notification_received", handleNotification);
+      };
+    }
+  }, [socket, queryClient]);
 
   const { data: projectsData, isLoading } = useQuery({
     queryKey: ['projects'],
