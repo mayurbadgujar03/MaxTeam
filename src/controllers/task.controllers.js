@@ -126,6 +126,11 @@ const createTask = asyncHandler(async (req, res) => {
     }
   }
 
+  const io = req.app.get("io");
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "task_update" });
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, task, "Task created successfully"));
@@ -258,6 +263,11 @@ const updateTask = asyncHandler(async (req, res) => {
     }
   }
 
+  const io = req.app.get("io");
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "task_update" });
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, task, "Task updated successfully"));
@@ -296,6 +306,11 @@ const deleteTask = asyncHandler(async (req, res) => {
         io.to(notification.userId.toString()).emit("notification_received", notification);
       }
     }
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "task_update" });
   }
 
   return res
@@ -346,6 +361,11 @@ const createSubTask = asyncHandler(async (req, res) => {
         io.to(notification.userId.toString()).emit("notification_received", notification);
       }
     }
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(projectId).emit("project_data_updated", { type: "task_update" });
   }
 
   return res
@@ -428,6 +448,11 @@ const updateSubTask = asyncHandler(async (req, res) => {
     }
   }
 
+  const io = req.app.get("io");
+  if (io) {
+    io.to(subtask.project.toString()).emit("project_data_updated", { type: "task_update" });
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, subtask, "Subtask updated successfully"));
@@ -476,6 +501,11 @@ const deleteSubTask = asyncHandler(async (req, res) => {
         io.to(notification.userId.toString()).emit("notification_received", notification);
       }
     }
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(projectId.toString()).emit("project_data_updated", { type: "task_update" });
   }
 
   return res

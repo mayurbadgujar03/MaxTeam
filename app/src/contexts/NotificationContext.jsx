@@ -10,7 +10,6 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-
   const { isAuthenticated } = useAuth();
   const { socket } = useSocket(); 
 
@@ -83,7 +82,28 @@ export const NotificationProvider = ({ children }) => {
       setUnreadCount((prev) => prev + 1);
     }
   };
+  useEffect(() => {
+    if (!socket || !isAuthenticated) return;
 
+    const handleNewNotification = (newNotification) => {
+      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
+      if (!pushEnabled) return;
+      console.log("🔔 Socket: Notification Received", newNotification);
+      setNotifications((prev) => [newNotification, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+      toast(newNotification.message, {
+        description: newNotification.description,
+        action: {
+          label: "View",
+          onClick: () => console.log("Navigate to project..."),
+        },
+      });
+    };
+    socket.on("notification_received", handleNewNotification);
+    return () => {
+      socket.off("notification_received", handleNewNotification);
+    };
+  }, [socket, isAuthenticated]);
   useEffect(() => {
     if (!socket || !isAuthenticated) return;
 
