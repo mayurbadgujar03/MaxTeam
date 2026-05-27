@@ -2,135 +2,155 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
-import {
-  sendEmail,
-  emailVerificationMailgenContent,
-  forgotPasswordRequestMailgenContent,
-} from "../utils/mail.js";
 
 import dotenv from "dotenv";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 dotenv.config();
 
-const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, fullname } = req.body;
+const googleLogin = (req, res) => {
+  console.log("THE CLIENT ID IS:", process.env.GOOGLE_CLIENT_ID);
 
-  if (!username || !email || !password || !fullname) {
-    return res.status(400).json(new ApiError(400, "All feilds are required"));
-  }
-
-  const existingUserEmail = await User.findOne({ email });
-
-  if (existingUserEmail) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "User with this email already exist"));
-  }
-
-  const existingUsername = await User.findOne({ username });
-
-  if (existingUsername) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "User with this username already exist"));
-  }
-
-  const user = await User.create({
-    username,
-    email,
-    password,
-    fullname,
-  });
-
-  if (!user) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "Network error user not created"));
-  }
-
-  const { hashedToken, unHashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
-
-  if (!hashedToken || !unHashedToken || !tokenExpiry) {
-    return res
-      .status(400)
-      .json(
-        new ApiError(400, "Failed to generate verification token for new user"),
-      );
-  }
-
-  user.emailVerificationToken = hashedToken;
-  user.emailVerificationExpiry = tokenExpiry;
-
-  await user.save();
-
-  sendEmail({
-    email: user.email,
-    subject: "Email verification on MaxTeam",
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/auth/verify-email/${unHashedToken}`,
-      user.emailVerificationExpiry,
-    ),
-  });
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { userId: user._id }, "Registered user"));
-});
-
-const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json(new ApiError(400, "All feilds are required"));
-  }
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(404).json(new ApiError(404, "User not found"));
-  }
-
-  if (user.isEmailVerified !== true) {
-    return res.status(400).json(new ApiError(400, "Email not verified"));
-  }
-
-  const isMatched = await user.isPasswordCorrect(password);
-
-  if (!isMatched) {
-    return res.status(400).json(new ApiError(400, "Password not matched"));
-  }
-
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
-
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  const accessOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 15 * 60 * 1000,
+  const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+  const options = {
+    redirect_uri: process.env.GOOGLE_CALLBACK_URL || "http://localhost:8000/api/v1/user/google/callback",
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    access_type: "offline",
+    response_type: "code",
+    prompt: "consent",
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
   };
-  const refreshOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  };
+  const qs = new URLSearchParams(options);
+  return res.redirect(`${rootUrl}?${qs.toString()}`);
+};
 
-  res
-    .cookie("accessToken", accessToken, accessOptions)
-    .cookie("refreshToken", refreshToken, refreshOptions);
+const googleCallback = asyncHandler(async (req, res) => {
+  const { code } = req.query;
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
+  if (!code) {
+    return res.status(400).json(new ApiError(400, "Authorization code is required"));
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const callbackUrl = process.env.GOOGLE_CALLBACK_URL || "http://localhost:8000/api/v1/user/google/callback";
+
+  try {
+    // 1. Exchange authorization code for access token
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: callbackUrl,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      console.error("Token exchange failed:", tokenData);
+      return res.status(400).json(new ApiError(400, tokenData.error_description || "Failed to exchange authorization code"));
+    }
+
+    const { access_token } = tokenData;
+
+    // 2. Fetch user profile info from Google
+    const userinfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    });
+
+    const profileData = await userinfoResponse.json();
+
+    if (!userinfoResponse.ok) {
+      console.error("Userinfo fetch failed:", profileData);
+      return res.status(400).json(new ApiError(400, "Failed to retrieve user profile from Google"));
+    }
+
+    const { sub: googleId, email, name, picture } = profileData;
+
+    if (!email) {
+      return res.status(400).json(new ApiError(400, "Google account does not provide an email address"));
+    }
+
+    // 3. Find or create the user in the database
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (user) {
+      // Map googleId if it wasn't already set
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // Generate a unique username from email
+      const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+      let username = baseUsername;
+      let isUsernameTaken = await User.findOne({ username });
+      let counter = 1;
+
+      while (isUsernameTaken) {
+        username = `${baseUsername}${counter}`;
+        isUsernameTaken = await User.findOne({ username });
+        counter++;
+      }
+
+      user = await User.create({
+        username,
+        email,
+        fullname: name || username,
+        googleId,
+        avatar: {
+          url: picture || "https://placehold.co/600x400",
+          localpath: "",
+        },
+        isEmailVerified: true,
+      });
+    }
+
+    // 4. Generate custom application JWTs
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    // 5. Persist the refresh token in the database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // 6. Set tokens in HTTP-only, secure, cross-origin cookies
+    const accessOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 15 * 60 * 1000,
+    };
+    const refreshOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+
+    res
+      .cookie("accessToken", accessToken, accessOptions)
+      .cookie("refreshToken", refreshToken, refreshOptions);
+
+    // 7. Redirect to the frontend dashboard
+    const frontendUrl = process.env.BASE_URL || "http://localhost:8080";
+    return res.redirect(`${frontendUrl}/dashboard`);
+  } catch (error) {
+    console.error("Google OAuth error:", error);
+    return res.status(500).json(new ApiError(500, "Internal server error during Google authentication"));
+  }
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -150,189 +170,6 @@ const logoutUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "LoggedOut the user"));
 });
 
-const verifyEmail = asyncHandler(async (req, res) => {
-  const token = req.params.token;
-
-  if (!token) {
-    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
-  }
-
-  const newHashedToken = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
-
-  const user = await User.findOne({
-    emailVerificationToken: newHashedToken,
-    emailVerificationExpiry: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
-  }
-
-  if (user.isEmailVerified) {
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, "If this account exists, it is already verified"),
-      );
-  }
-
-  user.isEmailVerified = true;
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpiry = undefined;
-
-  await user.save();
-
-  return res.status(200).json(new ApiResponse(200, "Verified successfully"));
-});
-
-const resendEmailVerification = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json(new ApiError(400, "All fields are required"));
-  }
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(400).json(new ApiError(400, "User with this email doesn't exist"));
-  }
-
-  if (user.isEmailVerified) {
-    return res.status(200).json(new ApiResponse(200, "This account exists, it is already verified"));
-  }
-
-  const now = Date.now();
-  if (user.emailVerificationExpiry && user.updatedAt) {
-    const lastTokenGenerated = new Date(user.updatedAt).getTime();
-    if (now - lastTokenGenerated < 60 * 1000) {
-      return res.status(429).json(new ApiError(429, "Please wait a minute for the previous email to arrive."));
-    }
-  }
-
-  const { hashedToken, unHashedToken, tokenExpiry } = user.generateTemporaryToken();
-
-  if (!hashedToken || !unHashedToken || !tokenExpiry) {
-    return res.status(400).json(new ApiError(400, "Failed to generate verification token for new user"));
-  }
-
-  user.emailVerificationToken = hashedToken;
-  user.emailVerificationExpiry = tokenExpiry;
-
-  await user.save();
-
-  sendEmail({
-    email: user.email,
-    subject: "Resend email verification on MaxTeam",
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/auth/verify-email/${unHashedToken}`,
-      user.emailVerificationExpiry,
-    ),
-  });
-
-  return res.status(200).json(new ApiResponse(200, { userId: user._id }, "Verification email resent successfully"));
-});
-
-const forgotPasswordRequest = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json(new ApiError(400, "All feilds are required"));
-  }
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(404).json(new ApiError(404, "User not found"));
-  }
-
-  const { hashedToken, unHashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
-
-  if (!hashedToken || !unHashedToken || !tokenExpiry) {
-    return res
-      .status(400)
-      .json(
-        new ApiError(400, "Failed to generate verification token for new user"),
-      );
-  }
-
-  user.forgotPasswordToken = hashedToken;
-  user.forgotPasswordExpiry = tokenExpiry;
-
-  await user.save();
-
-  sendEmail({
-    email: user.email,
-    subject: "Forgot password request",
-    mailgenContent: forgotPasswordRequestMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/auth/reset-password/${unHashedToken}`,
-      user.forgotPasswordExpiry,
-    ),
-  });
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, { userId: user._id }, "Password reset email sent"),
-    );
-});
-
-const resetForgottenPassword = asyncHandler(async (req, res) => {
-  const token = req.params.token;
-
-  if (!token) {
-    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
-  }
-
-  const { newPassword } = req.body;
-
-  if (!newPassword) {
-    return res.status(404).json(new ApiError(404, "All feilds are required"));
-  }
-
-  const newHashedToken = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
-    
-  const user = await User.findOne({
-    forgotPasswordToken: newHashedToken,
-    forgotPasswordExpiry: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(404).json(new ApiError(404, "Invalid or expired token"));
-  }
-
-  const isMatched = await bcrypt.compare(newPassword, user.password);
-  if (isMatched) {
-    return res.status(404).json(new ApiError(404, "Try new password"));
-  }
-
-  user.password = newPassword;
-  user.forgotPasswordToken = undefined;
-  user.forgotPasswordExpiry = undefined;
-  user.refreshToken = undefined;
-
-  await user.save();
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { userId: user._id },
-        "Password updated successfully",
-      ),
-    );
-});
-
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken;
 
@@ -350,30 +187,30 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         .json(new ApiError(401, "Refresh token is invalid or expired"));
     }
 
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
 
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
 
-  const accessOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 15 * 60 * 1000,
-  };
-  const refreshOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  };
+    const accessOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 15 * 60 * 1000,
+    };
+    const refreshOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
 
-  res
-    .cookie("accessToken", accessToken, accessOptions)
-    .cookie("refreshToken", refreshToken, refreshOptions)
-    .status(200)
-    .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
+    res
+      .cookie("accessToken", accessToken, accessOptions)
+      .cookie("refreshToken", refreshToken, refreshOptions)
+      .status(200)
+      .json(new ApiResponse(200, { userId: user._id }, "Logged user"));
   } catch (error) {
     return res
       .status(401)
@@ -381,45 +218,15 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-
-  if (!oldPassword || !newPassword) {
-    return res.status(401).json(new ApiError(401, "Old and new password are required"));
-  }
-
-  const user = await User.findById(req.user._id);
-  if (!user) {
-    return res.status(401).json(new ApiError(401, "User not found"));
-  }
-  
-  const isMatch = await user.isPasswordCorrect(oldPassword);
-  if (!isMatch) {
-    return res.status(401).json(new ApiError(401, "Old password is incorrect"));
-  }
-  
-  user.password = newPassword;
-  await user.save();
-  res
-  .status(200)
-  .json(
-    new ApiResponse(
-      200,
-      { userId: user._id },
-      "Password changed successfully",
-    ),
-  );
-});
-
 const getCurrentUser = asyncHandler(async (req, res) => {
   if (!req.user) {
     return res.status(401).json(new ApiError(401, "Not authenticated"));
   }
-  
+
   const user = await User.findById(req.user._id).select(
     "-password -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry",
   );
-  
+
   if (!user) {
     return res.status(401).json(new ApiError(401, "User not found"));
   }
@@ -430,14 +237,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 export {
-  registerUser,
-  loginUser,
   logoutUser,
-  verifyEmail,
-  resendEmailVerification,
-  forgotPasswordRequest,
-  resetForgottenPassword,
   refreshAccessToken,
-  changeCurrentPassword,
   getCurrentUser,
+  googleLogin,
+  googleCallback,
 };

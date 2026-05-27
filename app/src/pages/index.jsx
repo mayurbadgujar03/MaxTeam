@@ -33,25 +33,18 @@ export default function Index() {
           </Link>
           <div className="flex items-center gap-4">
             {!isLoading && (
-              <>
-                {isAuthenticated ? (
-                  <Link to="/dashboard">
-                    <Button className="gap-2">
+              <Link to={isAuthenticated ? "/dashboard" : "/auth/login"}>
+                <Button className="gap-2">
+                  {isAuthenticated ? (
+                    <>
                       <Home className="h-4 w-4" />
                       Go to Dashboard
-                    </Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link to="/auth/login">
-                      <Button variant="ghost">Sign in</Button>
-                    </Link>
-                    <Link to="/auth/register">
-                      <Button>Get Started</Button>
-                    </Link>
-                  </>
-                )}
-              </>
+                    </>
+                  ) : (
+                    "Get Started"
+                  )}
+                </Button>
+              </Link>
             )}
           </div>
         </div>
@@ -80,34 +73,24 @@ export default function Index() {
             </p>
             {!isLoading && (
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                {isAuthenticated ? (
-                  <Link to="/dashboard">
-                    <Button size="lg" className="w-full gap-2 px-8 sm:w-auto">
-                      <Home className="h-5 w-5" />
-                      Go to Dashboard
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link to="/auth/register" className="w-full sm:w-auto">
-                      <Button size="lg" className="w-full gap-2 px-8">
-                        Start free today
-                        <ArrowRight className="h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link to="/auth/login" className="w-full sm:w-auto">
-                      <Button size="lg" variant="outline" className="w-full px-8">
-                        Sign in
-                      </Button>
-                    </Link>
-                  </>
-                )}
+                <Link to={isAuthenticated ? "/dashboard" : "/auth/login"} className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full gap-2 px-8">
+                    {isAuthenticated ? (
+                      <>
+                        <Home className="h-5 w-5" />
+                        Go to Dashboard
+                      </>
+                    ) : (
+                      "Get Started"
+                    )}
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
             )}
             {!isAuthenticated && (
               <p className="mt-6 text-sm text-muted-foreground">
-                No credit card required · Free forever for small teams
+                Free forever for small teams · Google account required
               </p>
             )}
           </div>
@@ -354,35 +337,25 @@ export default function Index() {
                 : "Join thousands of teams who've ditched complexity for clarity. Start free, upgrade when you need more."}
             </p>
             {!isLoading && (
-              <>
-                {isAuthenticated ? (
-                  <Link to="/dashboard">
-                    <Button size="lg" className="gap-2 px-8">
-                      <Home className="h-5 w-5" />
-                      Open Dashboard
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Link to="/auth/register" className="w-full sm:w-auto">
-                      <Button size="lg" className="w-full gap-2 px-8">
-                        Get started free
-                        <ArrowRight className="h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link to="/auth/login" className="w-full sm:w-auto">
-                      <Button size="lg" variant="outline" className="w-full px-8">
-                        Sign in
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </>
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Link to={isAuthenticated ? "/dashboard" : "/auth/login"} className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full gap-2 px-8">
+                    {isAuthenticated ? (
+                      <>
+                        <Home className="h-5 w-5" />
+                        Go to Dashboard
+                      </>
+                    ) : (
+                      "Get Started"
+                    )}
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
             )}
             {!isAuthenticated && (
               <p className="mt-6 text-sm text-muted-foreground">
-                Free forever for small teams · No credit card required
+                Free forever for small teams · Google account required
               </p>
             )}
           </div>

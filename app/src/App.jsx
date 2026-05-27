@@ -13,10 +13,6 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
@@ -45,11 +41,11 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth/login" element={<LoginPage />} />
-                  <Route path="/auth/register" element={<RegisterPage />} />
-                  <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/auth/reset-password/:token" element={<ResetPasswordPage />} />
-                  <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
-                  <Route path="/auth/verify-email/:token" element={<VerifyEmailPage />} />
+                  <Route path="/auth/register" element={<Navigate to="/auth/login" replace />} />
+                  <Route path="/auth/forgot-password" element={<Navigate to="/auth/login" replace />} />
+                  <Route path="/auth/reset-password/:token" element={<Navigate to="/auth/login" replace />} />
+                  <Route path="/auth/verify-email" element={<Navigate to="/auth/login" replace />} />
+                  <Route path="/auth/verify-email/:token" element={<Navigate to="/auth/login" replace />} />
 
                   <Route
                     element={

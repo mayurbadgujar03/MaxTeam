@@ -1,12 +1,13 @@
-import app from "./app.js";
-import connectDB from "./db/index.js";
 import dotenv from "dotenv";
-import { createServer } from "http";
-import { Server } from "socket.io";
-
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: "./.env" });
 }
+
+import app from "./app.js";
+import connectDB from "./db/index.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
+
 
 const httpServer = createServer(app);
 

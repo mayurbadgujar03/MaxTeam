@@ -31,15 +31,6 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [refreshUser]);
 
-  const login = async (email, password) => {
-    await authApi.login({ email, password });
-    await refreshUser();
-  };
-
-  const register = async (email, username, password, fullname) => {
-    await authApi.register({ email, username, password, fullname });
-  };
-
   const logout = async () => {
     await authApi.logout();
     setUser(null);
@@ -51,8 +42,6 @@ export const AuthProvider = ({ children }) => {
         user,
         isLoading,
         isAuthenticated: !!user,
-        login,
-        register,
         logout,
         refreshUser,
       }}
