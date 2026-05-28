@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { membersApi } from '@/api/members';
+import { projectsApi } from '@/api/projects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,13 +26,128 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, MoreHorizontal, Trash2, UserPlus } from 'lucide-react';
+import {
+  Loader2,
+  MoreHorizontal,
+  Trash2,
+  UserPlus,
+  Github,
+  Pencil,
+  Check,
+  X,
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function MembersList({ projectId, members: propMembers, isAdmin = false }) {
+// ── Inline GitHub username editor ──────────────────────────────────────────
+function GithubUsernameEditor({ member, projectId, canManage }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [value, setValue] = useState(member.githubUsername || '');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (githubUsername) =>
+      projectsApi.updateMemberGithub(projectId, member.user?._id, githubUsername),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['members', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['commits', projectId] });
+      toast({ title: 'GitHub username saved' });
+      setIsEditing(false);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save GitHub username',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSave = () => {
+    mutation.mutate(value.trim());
+  };
+
+  const handleCancel = () => {
+    setValue(member.githubUsername || '');
+    setIsEditing(false);
+  };
+
+  if (!canManage) {
+    // Read-only display
+    return member.githubUsername ? (
+      <a
+        href={`https://github.com/${member.githubUsername}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Github className="h-3 w-3" />
+        {member.githubUsername}
+      </a>
+    ) : null;
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1 mt-1">
+        <Github className="h-3 w-3 text-muted-foreground shrink-0" />
+        <Input
+          className="h-6 text-xs px-1.5 py-0 w-32"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') handleCancel();
+          }}
+          placeholder="github-username"
+          autoFocus
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-green-600 hover:text-green-700"
+          onClick={handleSave}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          onClick={handleCancel}
+          disabled={mutation.isPending}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1 group"
+      onClick={() => setIsEditing(true)}
+      title="Set GitHub username"
+    >
+      <Github className="h-3 w-3" />
+      <span>{member.githubUsername || 'Add GitHub username'}</span>
+      <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-70 transition-opacity" />
+    </button>
+  );
+}
+
+// ── Main MembersList ────────────────────────────────────────────────────────
+export function MembersList({ projectId, members: propMembers, isAdmin = false, canManage = false }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
@@ -86,6 +202,7 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members', projectId] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['commits', projectId] });
       toast({ title: 'Member removed' });
     },
     onError: (error) => {
@@ -97,17 +214,16 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
     },
   });
 
-  // Use prop members if provided, otherwise use fetched data
   const members = propMembers || membersData?.data || [];
 
   const getRoleBadgeVariant = (role) => {
     switch (role) {
       case 'admin':
-        return 'default';  // Creator - primary color
+        return 'default';
       case 'project_admin':
-        return 'secondary';  // Project Admin - secondary color
+        return 'secondary';
       default:
-        return 'outline';  // Member - outline
+        return 'outline';
     }
   };
 
@@ -156,7 +272,11 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
               className="flex items-center gap-3 rounded-lg border p-3"
             >
               <Avatar>
-                <AvatarImage src={member.user?.avatar?.url} alt={member.user?.fullname || member.user?.username} className="object-cover" />
+                <AvatarImage
+                  src={member.user?.avatar?.url}
+                  alt={member.user?.fullname || member.user?.username}
+                  className="object-cover"
+                />
                 <AvatarFallback>
                   {member.user?.fullname
                     ? member.user.fullname
@@ -169,15 +289,26 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
                     : member.user?.username?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
+
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{member.user?.fullname || member.user?.username}</p>
+                <p className="font-medium truncate">
+                  {member.user?.fullname || member.user?.username}
+                </p>
                 <p className="text-sm text-muted-foreground truncate">
                   {member.user?.fullname ? `@${member.user.username}` : member.user?.email}
                 </p>
+                {/* GitHub username inline editor */}
+                <GithubUsernameEditor
+                  member={member}
+                  projectId={projectId}
+                  canManage={canManage || isAdmin}
+                />
               </div>
+
               <Badge variant={getRoleBadgeVariant(member.role)}>
                 {getRoleLabel(member.role)}
               </Badge>
+
               {isAdmin && member.role !== 'admin' && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -210,6 +341,7 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
                         Make Member
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive"
                       onClick={() => removeMutation.mutate(member.user?._id)}

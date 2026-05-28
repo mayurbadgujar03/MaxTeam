@@ -16,6 +16,11 @@ const projectSchema = new Schema(
       ref: "User",
       required: true,
     },
+    githubRepoUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

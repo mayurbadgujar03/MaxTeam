@@ -45,4 +45,14 @@ export const projectsApi = {
     const response = await apiClient.put(`/project/${projectId}/members/${memberId}`, { role });
     return response;
   },
+
+  async updateMemberGithub(projectId, memberId, githubUsername) {
+    const response = await apiClient.patch(`/project/${projectId}/members/${memberId}`, { githubUsername });
+    return response;
+  },
+
+  async getCommits(projectId) {
+    const response = await apiClient.get(`/project/${projectId}/commits`);
+    return response;
+  },
 };

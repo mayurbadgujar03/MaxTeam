@@ -23,6 +23,7 @@ import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { MembersList } from "@/components/members/MembersList";
+import { CodeTrackTab } from "@/components/projects/CodeTrackTab";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ import {
   Plus,
   Trash2,
   Loader2,
+  GitBranch,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -70,6 +72,7 @@ export default function ProjectDetailPage() {
 
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [projectGithubRepoUrl, setProjectGithubRepoUrl] = useState("");
 
   const {
     data: projectData,
@@ -114,6 +117,7 @@ export default function ProjectDetailPage() {
       return projectsApi.update(projectId, {
         name: projectName.trim(),
         description: projectDescription.trim(),
+        githubRepoUrl: projectGithubRepoUrl.trim(),
       });
     },
     onSuccess: () => {
@@ -160,6 +164,7 @@ export default function ProjectDetailPage() {
     if (project) {
       setProjectName(project.name);
       setProjectDescription(project.description || "");
+      setProjectGithubRepoUrl(project.githubRepoUrl || "");
     }
   }, [project]);
 
@@ -224,6 +229,12 @@ export default function ProjectDetailPage() {
             <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
+          {isAdmin && project?.githubRepoUrl && (
+            <TabsTrigger value="codetrack" className="gap-2">
+              <GitBranch className="h-4 w-4" />
+              Code Track
+            </TabsTrigger>
+          )}
           {isAdmin && (
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
@@ -358,6 +369,7 @@ export default function ProjectDetailPage() {
                 projectId={projectId}
                 members={projectMembers}
                 isAdmin={isAdmin}
+                canManage={canManageTasks}
               />
             </CardContent>
           </Card>
@@ -390,6 +402,25 @@ export default function ProjectDetailPage() {
                     rows={4}
                   />
                 </div>
+
+                {/* Code Track – GitHub Repo URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="github-repo-url" className="flex items-center gap-2">
+                    <GitBranch className="h-4 w-4 text-muted-foreground" />
+                    GitHub Repository URL
+                  </Label>
+                  <Input
+                    id="github-repo-url"
+                    type="url"
+                    placeholder="https://github.com/owner/repo"
+                    value={projectGithubRepoUrl}
+                    onChange={(e) => setProjectGithubRepoUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used by Code Track to fetch commit history. Must be a public repository, or ensure a <code className="font-mono">GITHUB_PAT</code> is configured on the server.
+                  </p>
+                </div>
+
                 <div className="flex items-center gap-4">
                   <Button
                     onClick={() => updateProjectMutation.mutate()}
@@ -436,6 +467,13 @@ export default function ProjectDetailPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {/* Code Track Tab – only visible when admin AND githubRepoUrl is set */}
+        {isAdmin && project?.githubRepoUrl && (
+          <TabsContent value="codetrack" className="mt-6">
+            <CodeTrackTab projectId={projectId} />
           </TabsContent>
         )}
       </Tabs>

@@ -18,6 +18,11 @@ const projectMemberSchema = new Schema(
       enum: AvailableUserRoles,
       default: UserRolesEnum.MEMBER,
     },
+    githubUsername: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

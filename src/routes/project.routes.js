@@ -12,9 +12,11 @@ import {
   getProjectById,
   getProjectMembers,
   getProjects,
+  updateMemberGithub,
   updateMemberRole,
   updateProject,
 } from "../controllers/project.controllers.js";
+import { getProjectCommits } from "../controllers/codetrack.controllers.js";
 
 const router = Router();
 
@@ -29,7 +31,7 @@ router
   )
   .put(
     isLoggedIn,
-    validateProjectPermission([UserRolesEnum.ADMIN]),
+    validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
     updateProject,
   )
   .delete(
@@ -55,13 +57,27 @@ router
   .route("/:projectId/members/:memberId")
   .put(
     isLoggedIn,
-    validateProjectPermission([UserRolesEnum.ADMIN]),
+    validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
     updateMemberRole,
+  )
+  .patch(
+    isLoggedIn,
+    validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
+    updateMemberGithub,
   )
   .delete(
     isLoggedIn,
     validateProjectPermission([UserRolesEnum.ADMIN]),
     deleteMember,
+  );
+
+// Code Track — admin (Mentor) only; secondary guard is inside the controller
+router
+  .route("/:projectId/commits")
+  .get(
+    isLoggedIn,
+    validateProjectPermission(AvailableUserRoles), // at minimum must be a member
+    getProjectCommits,                             // controller enforces admin-only
   );
 
 export default router;

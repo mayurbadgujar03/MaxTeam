@@ -9,6 +9,7 @@ import { ProjectTask } from "../models/task.models.js";
 import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { Notification } from "../models/notification.models.js";
+import { clearProjectCommitCache } from "./codetrack.controllers.js";
 import mongoose from "mongoose";
 import { type } from "os";
 
@@ -126,7 +127,7 @@ const createProject = asyncHandler(async (req, res) => {
 
 const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const { name, description } = req.body;
+  const { name, description, githubRepoUrl } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -138,9 +139,14 @@ const updateProject = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
 
+  const updatePayload = { name, description };
+  if (githubRepoUrl !== undefined) {
+    updatePayload.githubRepoUrl = githubRepoUrl;
+  }
+
   const project = await Project.findByIdAndUpdate(
     projectId,
-    { name, description },
+    updatePayload,
     { new: true },
   ).populate("createdBy", "username fullname avatar");
 
@@ -393,6 +399,10 @@ const deleteMember = asyncHandler(async (req, res) => {
   if (io) {
     io.to(projectId).emit("project_data_updated", { type: "member_update" });
   }
+
+  // Bust the Code Track cache — the member list has changed
+  clearProjectCommitCache(projectId);
+
   return res
     .status(200)
     .json(new ApiResponse(200, deletedMember, "Member deleted successfully"));
@@ -485,6 +495,55 @@ const updateMemberRole = asyncHandler(async (req, res) => {
     );
 });
 
+const updateMemberGithub = asyncHandler(async (req, res) => {
+  const { projectId, memberId } = req.params;
+  const { githubUsername } = req.body;
+
+  if (githubUsername === undefined) {
+    return res.status(400).json(new ApiError(400, "githubUsername is required"));
+  }
+
+  // Verify the requester is an admin or project_admin for this project
+  const requesterMembership = await ProjectMember.findOne({
+    user: new mongoose.Types.ObjectId(req.user._id),
+    project: new mongoose.Types.ObjectId(projectId),
+  });
+
+  if (
+    !requesterMembership ||
+    (requesterMembership.role !== UserRolesEnum.ADMIN &&
+      requesterMembership.role !== UserRolesEnum.PROJECT_ADMIN)
+  ) {
+    return res
+      .status(403)
+      .json(new ApiError(403, "You do not have permission to perform this action"));
+  }
+
+  const member = await ProjectMember.findOne({
+    user: new mongoose.Types.ObjectId(memberId),
+    project: new mongoose.Types.ObjectId(projectId),
+  });
+
+  if (!member) {
+    return res.status(404).json(new ApiError(404, "Member not found"));
+  }
+
+  member.githubUsername = githubUsername;
+  await member.save();
+
+  const populatedMember = await ProjectMember.findById(member._id).populate(
+    "user",
+    "username fullname avatar",
+  );
+
+  // Bust the Code Track cache — the github username mapping has changed
+  clearProjectCommitCache(projectId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, populatedMember, "GitHub username updated successfully"));
+});
+
 export {
   addMemberToProject,
   createProject,
@@ -493,6 +552,7 @@ export {
   getProjectById,
   getProjectMembers,
   getProjects,
+  updateMemberGithub,
   updateMemberRole,
   updateProject,
 };
