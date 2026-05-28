@@ -78,9 +78,17 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback className="text-2xl">
-                {user?.username?.charAt(0).toUpperCase()}
+              <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+              <AvatarFallback className="text-2xl font-semibold">
+                {user?.fullname
+                  ? user.fullname
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()
+                  : user?.username?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -115,9 +123,8 @@ export default function ProfilePage() {
 
           <div className="flex items-center gap-2 text-sm">
             <div
-              className={`h-2 w-2 rounded-full ${
-                user?.emailVerified ? 'bg-green-500' : 'bg-yellow-500'
-              }`}
+              className={`h-2 w-2 rounded-full ${user?.emailVerified ? 'bg-green-500' : 'bg-yellow-500'
+                }`}
             />
             <span className="text-muted-foreground">
               {user?.emailVerified ? 'Email verified' : 'Email not verified'}

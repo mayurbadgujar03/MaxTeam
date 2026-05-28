@@ -304,12 +304,20 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
               <Label>Assigned to</Label>
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={task.assignedTo.avatar} />
-                  <AvatarFallback>
-                    {task.assignedTo.username?.charAt(0).toUpperCase()}
+                  <AvatarImage src={task.assignedTo.avatar?.url} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
+                  <AvatarFallback className="text-xs">
+                    {task.assignedTo.fullname
+                      ? task.assignedTo.fullname
+                        .split(' ')
+                        .filter(Boolean)
+                        .map((n) => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()
+                      : task.assignedTo.username?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{task.assignedTo.username}</span>
+                <span className="text-sm">{task.assignedTo.fullname || task.assignedTo.username}</span>
               </div>
             </div>
           )}
@@ -458,9 +466,9 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
                 onChange={(e) => setNewSubtask(e.target.value)}
                 className="flex-1"
               />
-              <Button 
-                type="submit" 
-                size="sm" 
+              <Button
+                type="submit"
+                size="sm"
                 disabled={!newSubtask.trim() || addSubtaskMutation.isPending}
               >
                 {addSubtaskMutation.isPending ? (

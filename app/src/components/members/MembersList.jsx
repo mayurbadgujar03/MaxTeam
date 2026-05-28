@@ -156,15 +156,23 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false }
               className="flex items-center gap-3 rounded-lg border p-3"
             >
               <Avatar>
-                <AvatarImage src={member.user?.avatar} />
+                <AvatarImage src={member.user?.avatar?.url} alt={member.user?.fullname || member.user?.username} className="object-cover" />
                 <AvatarFallback>
-                  {member.user?.username?.charAt(0).toUpperCase() || 'U'}
+                  {member.user?.fullname
+                    ? member.user.fullname
+                      .split(' ')
+                      .filter(Boolean)
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                    : member.user?.username?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{member.user?.username}</p>
+                <p className="font-medium truncate">{member.user?.fullname || member.user?.username}</p>
                 <p className="text-sm text-muted-foreground truncate">
-                  {member.user?.fullname || member.user?.email}
+                  {member.user?.fullname ? `@${member.user.username}` : member.user?.email}
                 </p>
               </div>
               <Badge variant={getRoleBadgeVariant(member.role)}>

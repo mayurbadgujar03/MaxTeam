@@ -41,12 +41,12 @@ import { Loader2, Check, ChevronsUpDown, UserX, Calendar as CalendarIcon } from 
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 
-export function CreateTaskModal({ 
+export function CreateTaskModal({
   projectId,
   members = [],
-  defaultStatus = 'todo', 
-  open, 
-  onOpenChange 
+  defaultStatus = 'todo',
+  open,
+  onOpenChange
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -171,14 +171,25 @@ export function CreateTaskModal({
                     {assignedTo ? (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={members.find(m => m.user?._id === assignedTo)?.user?.avatar} />
+                          <AvatarImage src={members.find(m => m.user?._id === assignedTo)?.user?.avatar?.url} alt={members.find(m => m.user?._id === assignedTo)?.user?.fullname || members.find(m => m.user?._id === assignedTo)?.user?.username} className="object-cover" />
                           <AvatarFallback className="text-xs">
-                            {members.find(m => m.user?._id === assignedTo)?.user?.username?.charAt(0).toUpperCase()}
+                            {(() => {
+                              const foundUser = members.find(m => m.user?._id === assignedTo)?.user;
+                              return foundUser?.fullname
+                                ? foundUser.fullname
+                                  .split(' ')
+                                  .filter(Boolean)
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .slice(0, 2)
+                                  .toUpperCase()
+                                : foundUser?.username?.charAt(0).toUpperCase() || 'U';
+                            })()}
                           </AvatarFallback>
                         </Avatar>
                         <span className="truncate">
-                          {members.find(m => m.user?._id === assignedTo)?.user?.fullname || 
-                           members.find(m => m.user?._id === assignedTo)?.user?.username}
+                          {members.find(m => m.user?._id === assignedTo)?.user?.fullname ||
+                            members.find(m => m.user?._id === assignedTo)?.user?.username}
                         </span>
                       </div>
                     ) : (
@@ -225,9 +236,17 @@ export function CreateTaskModal({
                               )}
                             />
                             <Avatar className="mr-2 h-6 w-6">
-                              <AvatarImage src={member.user?.avatar} />
+                              <AvatarImage src={member.user?.avatar?.url} alt={member.user?.fullname || member.user?.username} className="object-cover" />
                               <AvatarFallback className="text-xs">
-                                {member.user?.username?.charAt(0).toUpperCase()}
+                                {member.user?.fullname
+                                  ? member.user.fullname
+                                    .split(' ')
+                                    .filter(Boolean)
+                                    .map((n) => n[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()
+                                  : member.user?.username?.charAt(0).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col">

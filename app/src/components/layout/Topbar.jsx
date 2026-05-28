@@ -3,9 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function Topbar({ title }) {
   const { user } = useAuth();
+
+  const initials = user?.fullname
+    ? user.fullname
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
+    : user?.username?.charAt(0).toUpperCase() || 'U';
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
@@ -25,19 +36,12 @@ export function Topbar({ title }) {
 
         <NotificationsPanel />
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-          {user?.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.username}
-              className="h-full w-full rounded-full object-cover"
-            />
-          ) : (
-            <span className="text-sm font-medium text-muted-foreground">
-              {user?.username?.charAt(0).toUpperCase() || 'U'}
-            </span>
-          )}
-        </div>
+        <Avatar className="h-9 w-9">
+          <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+          <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </header>
   );

@@ -3,6 +3,7 @@ import { NavLink } from '@/components/NavLink';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -15,10 +16,20 @@ const navigation = [
 export function AppSidebar() {
   const { user, logout } = useAuth();
 
+  const initials = user?.fullname
+    ? user.fullname
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
+    : user?.username?.charAt(0).toUpperCase() || 'U';
+
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
-      <Link 
-        to="/dashboard" 
+      <Link
+        to="/dashboard"
         className="flex h-16 items-center justify-center border-b border-sidebar-border px-6 transition-opacity hover:opacity-80"
       >
         <img src="/logo.png" alt="Flowbase" className="h-14 w-auto" />
@@ -42,19 +53,12 @@ export function AppSidebar() {
 
       <div className="border-t border-sidebar-border p-4">
         <div className="mb-3 flex items-center gap-3 px-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-            {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.username}
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-sm font-medium text-muted-foreground">
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            )}
-          </div>
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+            <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 overflow-hidden">
             <p className="truncate text-sm font-medium text-sidebar-foreground">
               {user?.fullname || user?.username}

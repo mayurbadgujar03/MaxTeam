@@ -15,8 +15,8 @@ const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
   const tasks = await ProjectTask.find({ project: projectId })
-    .populate("assignedBy", "username fullName")
-    .populate("assignedTo", "username fullName")
+    .populate("assignedBy", "username fullname avatar")
+    .populate("assignedTo", "username fullname avatar")
     .lean();
 
   const tasksWithSubtasks = await Promise.all(
@@ -37,8 +37,8 @@ const getTaskById = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
 
   const task = await ProjectTask.findById(taskId)
-    .populate("assignedBy", "username fullName")
-    .populate("assignedTo", "username fullName")
+    .populate("assignedBy", "username fullname avatar")
+    .populate("assignedTo", "username fullname avatar")
     .lean();
 
   if (!task) {

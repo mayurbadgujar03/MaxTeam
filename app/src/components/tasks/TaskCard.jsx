@@ -62,9 +62,17 @@ export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks =
             </div>
             {task.assignedTo && (
               <Avatar className="h-6 w-6">
-                <AvatarImage src={task.assignedTo.avatar} />
+                <AvatarImage src={task.assignedTo.avatar?.url} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
                 <AvatarFallback className="text-xs">
-                  {task.assignedTo.username?.charAt(0).toUpperCase()}
+                  {task.assignedTo.fullname
+                    ? task.assignedTo.fullname
+                      .split(' ')
+                      .filter(Boolean)
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                    : task.assignedTo.username?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
             )}
