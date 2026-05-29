@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { NoteEditor } from "@/components/notes/NoteEditor";
+import { NoteCard, CATEGORY_CONFIG } from "@/components/notes/NoteCard";
 import { MembersList } from "@/components/members/MembersList";
 import { CodeTrackTab } from "@/components/projects/CodeTrackTab";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +36,8 @@ import {
   Trash2,
   Loader2,
   GitBranch,
+  Search,
+  Pin,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -69,6 +72,8 @@ export default function ProjectDetailPage() {
   const [defaultTaskStatus, setDefaultTaskStatus] = useState("todo");
   const [selectedNote, setSelectedNote] = useState(null);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [noteSearch, setNoteSearch] = useState("");
+  const [noteCategory, setNoteCategory] = useState("all");
 
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -269,95 +274,125 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+            {/* ── Left panel: list + search + filters ── */}
+            <div className="flex flex-col gap-3 min-h-0">
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">All Notes</h3>
-                {canManageProject && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedNote(null);
-                      setIsCreatingNote(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Note
-                  </Button>
-                )}
+                <h3 className="font-medium">Notes</h3>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelectedNote(null);
+                    setIsCreatingNote(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  New Note
+                </Button>
               </div>
 
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  id="notes-search"
+                  placeholder="Search notes…"
+                  className="pl-8 h-8 text-sm"
+                  value={noteSearch}
+                  onChange={(e) => setNoteSearch(e.target.value)}
+                />
+              </div>
+
+              {/* Category filter chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {['all', ...Object.keys(CATEGORY_CONFIG)].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setNoteCategory(cat)}
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
+                      noteCategory === cat
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-foreground/40'
+                    }`}
+                  >
+                    {cat === 'all' ? 'All' : CATEGORY_CONFIG[cat].label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Note list */}
               {isNotesLoading ? (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
+                    <div key={i} className="rounded-xl border p-4 space-y-2">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-4 w-14 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
                   ))}
                 </div>
-              ) : notes.length > 0 ? (
-                <div className="space-y-2">
-                  {notes.map((note) => (
-                    <Card
-                      key={note._id}
-                      className={`cursor-pointer transition-all hover:border-foreground/20 ${
-                        selectedNote?._id === note._id
-                          ? "border-foreground/30"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        setSelectedNote(note);
-                        setIsCreatingNote(false);
-                      }}
-                    >
-                      <CardHeader className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs text-muted-foreground">
-                            By {note.createdBy?.username || "Unknown"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            •
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {note.createdAt &&
-                              formatDistanceToNow(new Date(note.createdAt), {
-                                addSuffix: true,
-                              })}
-                          </span>
-                        </div>
-                        <CardDescription className="line-clamp-3 text-sm">
-                          {note.content}
-                        </CardDescription>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-8">
-                    <FileText className="mb-2 h-8 w-8 text-muted-foreground/50" />
+              ) : (() => {
+                const filtered = notes.filter((n) => {
+                  const matchCat = noteCategory === 'all' || n.category === noteCategory;
+                  const q = noteSearch.toLowerCase();
+                  const matchSearch =
+                    !q ||
+                    n.title?.toLowerCase().includes(q) ||
+                    n.content?.toLowerCase().includes(q);
+                  return matchCat && matchSearch;
+                });
+
+                return filtered.length > 0 ? (
+                  <div className="space-y-2 overflow-y-auto">
+                    {filtered.map((note) => (
+                      <NoteCard
+                        key={note._id}
+                        note={note}
+                        isSelected={selectedNote?._id === note._id}
+                        onClick={() => {
+                          setSelectedNote(note);
+                          setIsCreatingNote(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <FileText className="mb-2 h-8 w-8 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground">
-                      No notes yet
+                      {noteSearch || noteCategory !== 'all'
+                        ? 'No notes match your filters'
+                        : 'No notes yet — create the first one!'}
                     </p>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                );
+              })()}
             </div>
 
-            <Card className="h-[500px]">
+            {/* ── Right panel: editor ── */}
+            <Card className="h-[600px] overflow-hidden">
               {selectedNote || isCreatingNote ? (
                 <NoteEditor
                   projectId={projectId}
                   note={selectedNote}
+                  currentUserId={user?._id}
+                  canManage={canManageProject}
                   onClose={() => {
                     setSelectedNote(null);
                     setIsCreatingNote(false);
                   }}
-                  isAdmin={canManageProject}
+                  onNoteChange={(updated) => {
+                    if (updated) setSelectedNote(updated);
+                  }}
                 />
               ) : (
-                <CardContent className="flex h-full items-center justify-center">
-                  <p className="text-muted-foreground">
-                    Select a note or create a new one
-                  </p>
+                <CardContent className="flex h-full flex-col items-center justify-center gap-2">
+                  <FileText className="h-10 w-10 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Select a note or create a new one</p>
                 </CardContent>
               )}
             </Card>

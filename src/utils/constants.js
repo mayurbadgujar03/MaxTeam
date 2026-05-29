@@ -13,3 +13,13 @@ export const TaskStatusEnum = {
 }
 
 export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
+
+export const NoteCategoryEnum = {
+    GENERAL: "general",
+    MEETING: "meeting",
+    ARCHITECTURE: "architecture",
+    TODO: "todo",
+    DECISION: "decision",
+};
+
+export const AvailableNoteCategories = Object.values(NoteCategoryEnum);

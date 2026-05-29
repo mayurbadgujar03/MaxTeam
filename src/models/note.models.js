@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { AvailableNoteCategories } from "../utils/constants.js";
 
 const projectNoteSchema = new Schema(
   {
@@ -12,9 +13,28 @@ const projectNoteSchema = new Schema(
       ref: "User",
       required: true,
     },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     content: {
       type: String,
       required: true,
+    },
+    category: {
+      type: String,
+      enum: AvailableNoteCategories,
+      default: "general",
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
     },
   },
   {
