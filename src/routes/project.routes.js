@@ -49,7 +49,7 @@ router
   )
   .post(
     isLoggedIn,
-    validateProjectPermission([UserRolesEnum.ADMIN]),
+    validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
     addMemberToProject,
   );
 

@@ -147,7 +147,7 @@ function GithubUsernameEditor({ member, projectId, canManage }) {
 }
 
 // ── Main MembersList ────────────────────────────────────────────────────────
-export function MembersList({ projectId, members: propMembers, isAdmin = false, canManage = false }) {
+export function MembersList({ projectId, members: propMembers, isAdmin = false, canManageProject = false }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
@@ -244,7 +244,7 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false, 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Team Members</h3>
-        {isAdmin && (
+        {canManageProject && (
           <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
             <UserPlus className="h-4 w-4" />
             Add Member
@@ -301,7 +301,7 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false, 
                 <GithubUsernameEditor
                   member={member}
                   projectId={projectId}
-                  canManage={canManage || isAdmin}
+                  canManage={canManageProject}
                 />
               </div>
 

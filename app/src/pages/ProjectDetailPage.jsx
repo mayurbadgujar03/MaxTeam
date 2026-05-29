@@ -158,7 +158,9 @@ export default function ProjectDetailPage() {
     (m) => m.user?._id === user?._id,
   )?.role;
   const isAdmin = currentUserRole === "admin";
-  const canManageTasks = isAdmin || currentUserRole === "project_admin";
+  // Both Mentor (admin) and Team Leader (project_admin) can manage the project
+  const canManageProject = isAdmin || currentUserRole === "project_admin";
+  const canManageTasks = canManageProject;
 
   useEffect(() => {
     if (project) {
@@ -229,13 +231,13 @@ export default function ProjectDetailPage() {
             <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
-          {isAdmin && project?.githubRepoUrl && (
+          {canManageProject && project?.githubRepoUrl && (
             <TabsTrigger value="codetrack" className="gap-2">
               <GitBranch className="h-4 w-4" />
               Code Track
             </TabsTrigger>
           )}
-          {isAdmin && (
+          {canManageProject && (
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
               Settings
@@ -271,7 +273,7 @@ export default function ProjectDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">All Notes</h3>
-                {isAdmin && (
+                {canManageProject && (
                   <Button
                     size="sm"
                     onClick={() => {
@@ -349,7 +351,7 @@ export default function ProjectDetailPage() {
                     setSelectedNote(null);
                     setIsCreatingNote(false);
                   }}
-                  isAdmin={isAdmin}
+                  isAdmin={canManageProject}
                 />
               ) : (
                 <CardContent className="flex h-full items-center justify-center">
@@ -369,13 +371,13 @@ export default function ProjectDetailPage() {
                 projectId={projectId}
                 members={projectMembers}
                 isAdmin={isAdmin}
-                canManage={canManageTasks}
+                canManageProject={canManageProject}
               />
             </CardContent>
           </Card>
         </TabsContent>
 
-        {isAdmin && (
+        {canManageProject && (
           <TabsContent value="settings" className="mt-6">
             <Card>
               <CardHeader>
@@ -436,42 +438,45 @@ export default function ProjectDetailPage() {
                   </Button>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h4 className="mb-2 font-medium text-destructive">
-                    Danger Zone
-                  </h4>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Once you delete a project, there is no going back. Please be
-                    certain.
-                  </p>
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      if (
-                        confirm("Are you sure you want to delete this project?")
-                      ) {
-                        deleteProjectMutation.mutate();
-                      }
-                    }}
-                    disabled={deleteProjectMutation.isPending}
-                  >
-                    {deleteProjectMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4" />
-                        Delete Project
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Danger Zone — only the Mentor (admin) can delete the project */}
+                {isAdmin && (
+                  <div className="border-t pt-6">
+                    <h4 className="mb-2 font-medium text-destructive">
+                      Danger Zone
+                    </h4>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Once you delete a project, there is no going back. Please
+                      be certain.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (
+                          confirm("Are you sure you want to delete this project?")
+                        ) {
+                          deleteProjectMutation.mutate();
+                        }
+                      }}
+                      disabled={deleteProjectMutation.isPending}
+                    >
+                      {deleteProjectMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          Delete Project
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
         )}
 
-        {/* Code Track Tab – only visible when admin AND githubRepoUrl is set */}
-        {isAdmin && project?.githubRepoUrl && (
+        {/* Code Track Tab – visible to admin & project_admin when githubRepoUrl is set */}
+        {canManageProject && project?.githubRepoUrl && (
           <TabsContent value="codetrack" className="mt-6">
             <CodeTrackTab projectId={projectId} />
           </TabsContent>

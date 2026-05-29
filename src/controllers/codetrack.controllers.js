@@ -49,24 +49,26 @@ function parseGithubRepo(repoUrl) {
 
 // ---------------------------------------------------------------------------
 // GET /:projectId/commits
-// Security: only the project "admin" (Mentor role) may call this endpoint.
+// Security: project "admin" (Mentor) AND "project_admin" (Team Leader) may
+// call this endpoint. Plain "member" users are blocked with a 403.
 // ---------------------------------------------------------------------------
 const getProjectCommits = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  // 1. Verify caller is the admin (Mentor) of this project
+  // 1. Verify caller is an admin (Mentor) or project_admin (Team Leader)
   const requesterMembership = await ProjectMember.findOne({
     user: new mongoose.Types.ObjectId(req.user._id),
     project: new mongoose.Types.ObjectId(projectId),
   });
 
-  if (!requesterMembership || requesterMembership.role !== UserRolesEnum.ADMIN) {
+  const allowedRoles = [UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN];
+  if (!requesterMembership || !allowedRoles.includes(requesterMembership.role)) {
     return res
       .status(403)
       .json(
         new ApiError(
           403,
-          "Only the project admin (Mentor) can access Code Track data",
+          "Only Mentors and Team Leaders can access Code Track data",
         ),
       );
   }

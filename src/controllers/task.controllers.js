@@ -184,28 +184,42 @@ const updateTask = asyncHandler(async (req, res) => {
   const oldStatus = task.status;
   const oldAssignedTo = task.assignedTo;
 
-  if (title) task.title = title;
-  if (description) task.description = description;
-  if (status) task.status = status;
-  if (assignedTo !== undefined) task.assignedTo = assignedTo;
-  if (dueDate !== undefined) task.dueDate = dueDate;
+  // Build the scalar-field update payload
+  const scalarUpdate = {};
+  if (title !== undefined) scalarUpdate.title = title;
+  if (description !== undefined) scalarUpdate.description = description;
+  if (status !== undefined) scalarUpdate.status = status;
+  if (assignedTo !== undefined) scalarUpdate.assignedTo = assignedTo;
+  if (dueDate !== undefined) scalarUpdate.dueDate = dueDate;
 
-  if (links !== undefined) {
-    if (Array.isArray(links)) {
-      const processedLinks = await Promise.all(
-        links.map(async (item) => {
-          if (typeof item === "string") {
-            return await fetchLinkMetadata(item);
-          } else {
-            return item;
-          }
-        }),
-      );
-      task.links = processedLinks;
-    }
+  // Process any incoming link strings into rich metadata objects
+  let newLinkObjects = [];
+  if (links !== undefined && Array.isArray(links) && links.length > 0) {
+    newLinkObjects = await Promise.all(
+      links.map(async (item) => {
+        if (typeof item === "string") {
+          return await fetchLinkMetadata(item);
+        }
+        return item; // already an object — pass through
+      }),
+    );
   }
 
-  await task.save();
+  // Build the Mongoose update: use $set for scalars, $push/$each to APPEND links
+  const mongoUpdate = {};
+  if (Object.keys(scalarUpdate).length > 0) mongoUpdate.$set = scalarUpdate;
+  if (newLinkObjects.length > 0) {
+    mongoUpdate.$push = { links: { $each: newLinkObjects } };
+  }
+
+  const updatedTask = await ProjectTask.findByIdAndUpdate(
+    taskId,
+    mongoUpdate,
+    { new: true },
+  );
+
+  // Keep a local reference used by notification logic below
+  const savedTask = updatedTask;
 
   const project = await Project.findById(projectId);
   const updater = await User.findById(req.user._id);
@@ -215,10 +229,10 @@ const updateTask = asyncHandler(async (req, res) => {
     const notification = await Notification.create({
       userId: assignedTo,
       type: "task_assigned",
-      message: `You were assigned to "${task.title}"`,
+      message: `You were assigned to "${savedTask.title}"`,
       description: `${updater.fullname} assigned you a task in ${project.name}`,
       projectId: projectId,
-      taskId: task._id,
+      taskId: savedTask._id,
       read: false,
     });
     const io = req.app.get("io");
@@ -233,10 +247,10 @@ const updateTask = asyncHandler(async (req, res) => {
         const notification = await Notification.create({
           userId: member.user,
           type: "task_completed",
-          message: `Task completed: "${task.title}"`,
+          message: `Task completed: "${savedTask.title}"`,
           description: `${updater.fullname} marked a task as completed in ${project.name}`,
           projectId: projectId,
-          taskId: task._id,
+          taskId: savedTask._id,
           read: false,
         });
         const io = req.app.get("io");
@@ -251,10 +265,10 @@ const updateTask = asyncHandler(async (req, res) => {
         const notification = await Notification.create({
           userId: member.user,
           type: "task_assigned",
-          message: `Task updated: "${task.title}"`,
+          message: `Task updated: "${savedTask.title}"`,
           description: `${updater.fullname} updated a task in ${project.name}`,
           projectId: projectId,
-          taskId: task._id,
+          taskId: savedTask._id,
           read: false,
         });
         const io = req.app.get("io");
@@ -272,7 +286,7 @@ const updateTask = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, task, "Task updated successfully"));
+    .json(new ApiResponse(200, updatedTask, "Task updated successfully"));
 });
 
 const deleteTask = asyncHandler(async (req, res) => {
