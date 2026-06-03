@@ -101,7 +101,7 @@ const createNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      const notification = await Notification.create({
+      await Notification.create({
         userId: member.user,
         type: "project_updated",
         message: `New note added in "${project.name}"`,
@@ -114,17 +114,10 @@ const createNote = asyncHandler(async (req, res) => {
           actorId: creator._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
     }
   }
 
-  const io = req.app.get("io");
-  if (io) {
-    io.to(projectId).emit("project_data_updated", { type: "note_update" });
-  }
+
 
   return res
     .status(201)
@@ -184,7 +177,7 @@ const updateNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      const notification = await Notification.create({
+      await Notification.create({
         userId: member.user,
         type: "project_updated",
         message: `Note updated in "${project.name}"`,
@@ -197,17 +190,10 @@ const updateNote = asyncHandler(async (req, res) => {
           actorId: updater._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
     }
   }
 
-  const io = req.app.get("io");
-  if (io) {
-    io.to(existingNote.project.toString()).emit("project_data_updated", { type: "note_update" });
-  }
+
 
   return res
     .status(200)
@@ -247,7 +233,7 @@ const deleteNote = asyncHandler(async (req, res) => {
 
   for (const member of projectMembers) {
     if (member.user.toString() !== req.user._id.toString()) {
-      const notification = await Notification.create({
+      await Notification.create({
         userId: member.user,
         type: "project_updated",
         message: `Note deleted in "${project.name}"`,
@@ -260,19 +246,12 @@ const deleteNote = asyncHandler(async (req, res) => {
           actorId: deleter._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
     }
   }
 
   await ProjectNote.findByIdAndDelete(noteId);
 
-  const io = req.app.get("io");
-  if (io) {
-    io.to(note.project.toString()).emit("project_data_updated", { type: "note_update" });
-  }
+
 
   return res
     .status(200)

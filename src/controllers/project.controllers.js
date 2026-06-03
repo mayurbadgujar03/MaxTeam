@@ -115,10 +115,7 @@ const createProject = asyncHandler(async (req, res) => {
       actorId: user._id,
     },
   });
-  const io = req.app.get("io");
-  if (io) {
-    io.to(notification.userId.toString()).emit("notification_received", notification);
-  }
+
 
   return res
     .status(200)
@@ -168,10 +165,7 @@ const updateProject = asyncHandler(async (req, res) => {
           actorId: updater._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
+
     }
   }
 
@@ -207,10 +201,7 @@ const deleteProject = asyncHandler(async (req, res) => {
           actorId: deleter._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
+
     }
   }
 
@@ -297,10 +288,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
       actorId: admin._id,
     },
   });
-  const io = req.app.get("io");
-  if (io) {
-    io.to(notification.userId.toString()).emit("notification_received", notification);
-  }
+
 
   const projectMembers = await ProjectMember.find({ project: projectId });
 
@@ -322,14 +310,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
         newMemberId: user._id,
       }
     });
-    const io = req.app.get("io");
-    if (io) {
-      io.to(notification.userId.toString()).emit("notification_received", notification);
     }
-  }
-
-  if (io) {
-    io.to(projectId).emit("project_data_updated", { type: "member_update" });
   }
   return res
     .status(200)
@@ -367,10 +348,7 @@ const deleteMember = asyncHandler(async (req, res) => {
       actorId: remover._id,
     },
   });
-  const io = req.app.get("io");
-  if (io) {
-    io.to(notification.userId.toString()).emit("notification_received", notification);
-  }
+
 
   const projectMembers = await ProjectMember.find({ project: projectId });
   for (const member of projectMembers) {
@@ -389,15 +367,7 @@ const deleteMember = asyncHandler(async (req, res) => {
           actorId: remover._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
     }
-  }
-
-  if (io) {
-    io.to(projectId).emit("project_data_updated", { type: "member_update" });
   }
 
   // Bust the Code Track cache — the member list has changed
@@ -454,10 +424,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
       actorId: updater._id,
     },
   });
-  const io = req.app.get("io");
-  if (io) {
-    io.to(notification.userId.toString()).emit("notification_received", notification);
-  }
+
 
   const projectMembers = await ProjectMember.find({ project: projectId });
   for (const projectMember of projectMembers) {
@@ -478,15 +445,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
           actorId: updater._id,
         },
       });
-      const io = req.app.get("io");
-      if (io) {
-        io.to(notification.userId.toString()).emit("notification_received", notification);
-      }
     }
-  }
-
-  if (io) {
-    io.to(projectId).emit("project_data_updated", { type: "member_update" });
   }
   return res
     .status(200)

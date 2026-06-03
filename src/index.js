@@ -6,11 +6,12 @@ if (process.env.NODE_ENV !== 'production') {
 import app from "./app.js";
 import connectDB from "./db/index.js";
 import { createServer } from "http";
-import { Server } from "socket.io";
+// import { Server } from "socket.io";
 
 
 const httpServer = createServer(app);
 
+/* WebSockets disabled for deployment stability (REST + polling used instead)
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN || [
@@ -41,6 +42,7 @@ io.on("connection", (socket) => {
     console.log("Client disconnected", socket.id);
   });
 });
+*/
 
 const PORT = process.env.PORT || 8000;
 connectDB()

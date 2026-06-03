@@ -1,72 +1,18 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-import { useAuth } from "./AuthContext";
+import { createContext, useContext } from "react";
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  const { isAuthenticated, user, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!isAuthenticated) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-      }
-      return;
-    }
-
-    if (socket?.connected) return;
-
-    const apiUrl = import.meta.env.VITE_API_URL;
-    let backendUrl = apiUrl || "http://localhost:8000";
-    backendUrl = backendUrl.replace(/\/api(\/v1)?$/, "");
-
-    const newSocket = io(backendUrl, {
-      withCredentials: true,
-      reconnectionAttempts: 5,
-      timeout: 10000,
-    });
-
-    setSocket(newSocket);
-
-    const handleConnect = () => {
-      setIsConnected(true);
-      if (user?._id) newSocket.emit("join_user", user._id);
-    };
-
-    const handleDisconnect = () => {
-      setIsConnected(false);
-    };
-
-    const handleConnectError = (err) => {};
-
-    newSocket.on("connect", handleConnect);
-    newSocket.on("disconnect", handleDisconnect);
-    newSocket.on("connect_error", handleConnectError);
-
-    return () => {
-      newSocket.off("connect", handleConnect);
-      newSocket.off("disconnect", handleDisconnect);
-      newSocket.off("connect_error", handleConnectError);
-      newSocket.disconnect();
-      setSocket(null);
-      setIsConnected(false);
-    };
-  }, [isAuthenticated, isLoading, user]);
+  // WebSockets disabled in favor of REST + React Query polling
+  const socket = null;
+  const isConnected = false;
 
   const joinProject = (projectId) => {
-    if (socket && isConnected) socket.emit("join_project", projectId);
+    // No-op (Sockets disabled)
   };
 
   const joinUser = (userId) => {
-    if (socket && isConnected) socket.emit("join_user", userId);
+    // No-op (Sockets disabled)
   };
 
   return (

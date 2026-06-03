@@ -14,7 +14,7 @@ const subtaskSchema = new Schema(
     },
     task: {
       type: Schema.Types.ObjectId,
-      ref: "ProjectTask",
+      ref: "Task",
       required: true,
     },
     isCompleted: {

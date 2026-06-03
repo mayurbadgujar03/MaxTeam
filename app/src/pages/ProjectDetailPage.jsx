@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useSocket } from "@/contexts/SocketContext";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,22 +47,6 @@ export default function ProjectDetailPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { socket, joinProject } = useSocket();
-  useEffect(() => {
-    if (projectId && socket) {
-      joinProject(projectId);
-
-      const handleProjectUpdate = () => {
-        queryClient.invalidateQueries(["tasks", projectId]);
-        queryClient.invalidateQueries(["notes", projectId]);
-      };
-      socket.on("project_data_updated", handleProjectUpdate);
-
-      return () => {
-        socket.off("project_data_updated", handleProjectUpdate);
-      };
-    }
-  }, [projectId, socket, queryClient, joinProject]);
 
   const taskIdFromUrl = searchParams.get("taskId");
 
@@ -106,12 +89,14 @@ export default function ProjectDetailPage() {
     queryKey: ["tasks", projectId],
     queryFn: () => tasksApi.getAll(projectId),
     enabled: !!projectId,
+    refetchInterval: 5000,
   });
 
   const { data: notesData, isLoading: isNotesLoading } = useQuery({
     queryKey: ["notes", projectId],
     queryFn: () => notesApi.getAll(projectId),
     enabled: !!projectId,
+    refetchInterval: 5000,
   });
 
   const updateProjectMutation = useMutation({
