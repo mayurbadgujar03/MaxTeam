@@ -1,11 +1,11 @@
-import { Search } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export function Topbar({ title }) {
+export function Topbar({ title, onMenuClick }) {
   const { user } = useAuth();
 
   const initials = user?.fullname
@@ -19,12 +19,22 @@ export function Topbar({ title }) {
     : user?.username?.charAt(0).toUpperCase() || 'U';
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
-      <div className="flex items-center gap-4">
-        {title && <h1 className="text-lg font-semibold text-foreground">{title}</h1>}
+    <header className="flex h-16 items-center justify-between border-b border-border bg-background px-4 md:px-6 shrink-0">
+      <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-9 w-9 shrink-0"
+          onClick={onMenuClick}
+          title="Open Menu"
+          aria-label="Open Menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        {title && <h1 className="text-base md:text-lg font-semibold text-foreground truncate">{title}</h1>}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input

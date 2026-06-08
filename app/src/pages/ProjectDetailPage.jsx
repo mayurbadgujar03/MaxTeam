@@ -261,9 +261,9 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-6">
             {/* ── Left panel: list + search + filters ── */}
-            <div className="flex flex-col gap-3 min-h-0">
+            <div className="flex flex-col gap-3 h-[300px] lg:h-[calc(100vh-200px)] overflow-y-auto lg:overflow-visible min-h-0 shrink-0 border-b pb-6 lg:border-b-0 lg:pb-0">
               {/* Header */}
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">Notes</h3>
@@ -292,7 +292,7 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Category filter chips */}
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 font-sans">
                 {['all', ...Object.keys(CATEGORY_CONFIG)].map((cat) => (
                   <button
                     key={cat}
@@ -334,7 +334,7 @@ export default function ProjectDetailPage() {
                 });
 
                 return filtered.length > 0 ? (
-                  <div className="space-y-2 overflow-y-auto">
+                  <div className="space-y-2 overflow-y-auto flex-1">
                     {filtered.map((note) => (
                       <NoteCard
                         key={note._id}
@@ -361,7 +361,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* ── Right panel: editor ── */}
-            <Card className="h-[600px] overflow-hidden">
+            <Card className="min-h-[500px] lg:h-[calc(100vh-200px)] flex flex-col overflow-hidden">
               {selectedNote || isCreatingNote ? (
                 <NoteEditor
                   projectId={projectId}

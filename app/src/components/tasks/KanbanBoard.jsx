@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { tasksApi } from '@/api/tasks';
 import { TaskCard } from './TaskCard';
@@ -47,11 +47,8 @@ export function KanbanBoard({ tasks, projectId, onCreateTask, canManageTasks = f
   }, [initialTaskId, tasks]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // 8px movement required to start drag
-      },
-    })
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
   const updateTaskStatusMutation = useMutation({
@@ -161,7 +158,7 @@ export function KanbanBoard({ tasks, projectId, onCreateTask, canManageTasks = f
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
           {columns.map((column) => {
             const columnTasks = getTasksByStatus(column.id);
             
