@@ -89,14 +89,16 @@ export default function ProjectDetailPage() {
     queryKey: ["tasks", projectId],
     queryFn: () => tasksApi.getAll(projectId),
     enabled: !!projectId,
-    refetchInterval: 5000,
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: notesData, isLoading: isNotesLoading } = useQuery({
     queryKey: ["notes", projectId],
     queryFn: () => notesApi.getAll(projectId),
     enabled: !!projectId,
-    refetchInterval: 5000,
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
   });
 
   const updateProjectMutation = useMutation({

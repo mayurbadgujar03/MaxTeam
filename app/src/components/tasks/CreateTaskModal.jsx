@@ -222,7 +222,7 @@ export function CreateTaskModal({
                         </CommandItem>
                         {members.map((member) => (
                           <CommandItem
-                            key={member.user?._id}
+                            key={member._id}
                             value={`${member.user?.username} ${member.user?.fullname || ''}`}
                             onSelect={() => {
                               setAssignedTo(member.user?._id);

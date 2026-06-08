@@ -310,7 +310,6 @@ const addMemberToProject = asyncHandler(async (req, res) => {
         newMemberId: user._id,
       }
     });
-    }
   }
   return res
     .status(200)

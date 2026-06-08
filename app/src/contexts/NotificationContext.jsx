@@ -1,70 +1,142 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { notificationsApi } from "@/api/notifications";
 import { useAuth } from "./AuthContext";
-import { useSocket } from "./SocketContext"; 
-import { toast } from "sonner"; 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const NotificationContext = createContext(undefined);
 
 export const NotificationProvider = ({ children }) => {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const [pushEnabled, setPushEnabled] = useState(() => {
+    return localStorage.getItem("pushNotifications") === "true";
+  });
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const { isAuthenticated } = useAuth();
-  const { socket } = useSocket(); 
+  const notifiedSet = useRef(new Set());
+  const isFirstFetch = useRef(true);
 
-  const fetchNotifications = async () => {
-    if (!isAuthenticated) return;
+  // Sync pushEnabled state when localStorage changes across tabs/windows
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "pushNotifications") {
+        setPushEnabled(e.newValue === "true");
+      }
+    };
 
-    const pushEnabled = localStorage.getItem("pushNotifications") === "true";
-    if (!pushEnabled) {
-      setIsLoading(false);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // React Query polling for notifications
+  const { data: queryData, isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const response = await notificationsApi.getAll();
+      return response?.data || response || { notifications: [], totalCount: 0, unreadCount: 0 };
+    },
+    enabled: !!isAuthenticated,
+    refetchInterval: 60000, // poll every 60 seconds
+    refetchOnWindowFocus: true,
+  });
+
+  // Keep local state in sync with React Query cache
+  useEffect(() => {
+    if (!queryData) return;
+
+    // Support nested or direct structures
+    const notificationsList = queryData.notifications || queryData.data?.notifications || (Array.isArray(queryData) ? queryData : []);
+    const countUnread = queryData.unreadCount !== undefined 
+      ? queryData.unreadCount 
+      : (queryData.data?.unreadCount !== undefined ? queryData.data.unreadCount : 0);
+
+    setNotifications(notificationsList);
+    setUnreadCount(countUnread);
+  }, [queryData]);
+
+  // Request browser notification permissions
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        return permission;
+      } catch (error) {
+        console.error("Error requesting notification permission:", error);
+      }
+    }
+    return "default";
+  };
+
+  // Request permission immediately if push notifications are enabled
+  useEffect(() => {
+    if (pushEnabled && isAuthenticated) {
+      requestNotificationPermission();
+    }
+  }, [pushEnabled, isAuthenticated]);
+
+  // Native Browser Notification trigger
+  useEffect(() => {
+    if (!queryData) return;
+
+    const notificationsList = queryData.notifications || queryData.data?.notifications || (Array.isArray(queryData) ? queryData : []);
+    const unread = notificationsList.filter((n) => !n.read);
+
+    // To prevent spamming the user with multiple popups on page reload/first load,
+    // we populate the notifiedSet with existing unread notifications first.
+    if (isFirstFetch.current) {
+      unread.forEach((n) => notifiedSet.current.add(n._id));
+      isFirstFetch.current = false;
       return;
     }
 
-    try {
-      const response = await notificationsApi.getAll();
-      const notifications = response.data?.notifications || [];
-      setNotifications(notifications);
-
-      const unreadCount = response.data?.unreadCount || 0;
-      setUnreadCount(unreadCount);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    unread.forEach((notif) => {
+      if (!notifiedSet.current.has(notif._id)) {
+        notifiedSet.current.add(notif._id);
+        if (Notification.permission === "granted") {
+          new Notification("Flowbase", {
+            body: notif.message,
+          });
+        }
+      }
+    });
+  }, [queryData]);
 
   const markAsRead = async (notificationId) => {
     try {
-      await notificationsApi.markAsRead(notificationId);
-
+      // Optimistic local state update
       setNotifications((prev) =>
         prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      await notificationsApi.markAsRead(notificationId);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      await notificationsApi.markAllAsRead();
-
+      // Optimistic local state update
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
+
+      await notificationsApi.markAllAsRead();
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   };
 
   const deleteNotification = async (notificationId) => {
     try {
-      await notificationsApi.deleteNotification(notificationId);
-
+      // Optimistic local state update
       setNotifications((prev) => {
         const deleted = prev.find((n) => n._id === notificationId);
         if (deleted && !deleted.read) {
@@ -72,131 +144,32 @@ export const NotificationProvider = ({ children }) => {
         }
         return prev.filter((n) => n._id !== notificationId);
       });
+
+      await notificationsApi.deleteNotification(notificationId);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Failed to delete notification:", error);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   };
 
+  // Used by SettingsPage to generate local test notifications
   const addNotification = (notification) => {
     setNotifications((prev) => [notification, ...prev]);
     if (!notification.read) {
       setUnreadCount((prev) => prev + 1);
     }
   };
+
+  // Clear state/ref caches on logout or when notifications are disabled
   useEffect(() => {
-    if (!socket || !isAuthenticated) return;
-
-    const handleNewNotification = (newNotification) => {
-      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
-      if (!pushEnabled) return;
-      console.log("🔔 Socket: Notification Received", newNotification);
-      setNotifications((prev) => [newNotification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-      toast(newNotification.message, {
-        description: newNotification.description,
-        action: {
-          label: "View",
-          onClick: () => console.log("Navigate to project..."),
-        },
-      });
-    };
-    socket.on("notification_received", handleNewNotification);
-    return () => {
-      socket.off("notification_received", handleNewNotification);
-    };
-  }, [socket, isAuthenticated]);
-  useEffect(() => {
-    if (!socket || !isAuthenticated) return;
-
-    const handleNewNotification = (newNotification) => {
-      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
-      if (!pushEnabled) return;
-
-      console.log("🔔 Socket: Notification Received", newNotification);
-
-      setNotifications((prev) => [newNotification, ...prev]);
-
-      setUnreadCount((prev) => prev + 1);
-
-      toast(newNotification.message, {
-        description: newNotification.description,
-        action: {
-          label: "View",
-          onClick: () => console.log("Navigate to project..."), 
-        },
-      });
-    };
-
-    socket.on("notification_received", handleNewNotification);
-
-    return () => {
-      socket.off("notification_received", handleNewNotification);
-    };
-  }, [socket, isAuthenticated]);
-
-  useEffect(() => {
-    if (!socket || !isAuthenticated) return;
-
-    const handleNewNotification = (newNotification) => {
-      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
-      if (!pushEnabled) return;
-
-      console.log("🔔 Socket: Notification Received", newNotification);
-
-      setNotifications((prev) => [newNotification, ...prev]);
-
-      setUnreadCount((prev) => prev + 1);
-
-      toast(newNotification.message, {
-        description: newNotification.description,
-        action: {
-          label: "View",
-          onClick: () => console.log("Navigate to project..."), 
-        },
-      });
-    };
-
-    socket.on("notification_received", handleNewNotification);
-
-    return () => {
-      socket.off("notification_received", handleNewNotification);
-    };
-  }, [socket, isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      const pushEnabled = localStorage.getItem("pushNotifications") === "true";
-
-      if (pushEnabled) {
-        fetchNotifications();
-      } else {
-        setNotifications([]);
-        setUnreadCount(0);
-        setIsLoading(false);
-      }
-    } else {
+    if (!isAuthenticated || !pushEnabled) {
       setNotifications([]);
       setUnreadCount(0);
-      setIsLoading(false);
+      isFirstFetch.current = true;
+      notifiedSet.current.clear();
     }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === "pushNotifications" && isAuthenticated) {
-        const pushEnabled = e.newValue === "true";
-        if (pushEnabled) {
-          fetchNotifications();
-        } else {
-          setNotifications([]);
-          setUnreadCount(0);
-        }
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, pushEnabled]);
 
   return (
     <NotificationContext.Provider
@@ -204,11 +177,11 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         isLoading,
-        fetchNotifications,
         markAsRead,
         markAllAsRead,
         deleteNotification,
         addNotification,
+        requestNotificationPermission,
       }}
     >
       {children}
