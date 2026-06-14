@@ -11,6 +11,9 @@ import projectNotes from "./routes/note.routes.js";
 import project from "./routes/project.routes.js";
 import task from "./routes/task.routes.js";
 import notification from "./routes/notification.routes.js";
+import publicRouter from "./routes/public.routes.js";
+import feedbackRouter from "./routes/feedback.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -42,5 +45,13 @@ app.use("/api/v1/project-note", projectNotes);
 app.use("/api/v1/project", project);
 app.use("/api/v1/task", task);
 app.use("/api/v1/notifications", notification);
+
+app.use("/api/v1/public", publicRouter);
+app.use("/api/v1/feedback", feedbackRouter);
+app.use("/api/v1/admin", adminRouter);
+
+app.use("/api/public", publicRouter);
+app.use("/api/feedback", feedbackRouter);
+app.use("/api/admin", adminRouter);
 
 export default app;

@@ -24,3 +24,25 @@ export const NoteCategoryEnum = {
 };
 
 export const AvailableNoteCategories = Object.values(NoteCategoryEnum);
+
+export const SystemRolesEnum = {
+    USER: "user",
+    SUPERADMIN: "superadmin",
+};
+
+export const AvailableSystemRoles = Object.values(SystemRolesEnum);
+
+export const FeedbackTypeEnum = {
+    BUG: "Bug",
+    FEATURE: "Feature",
+    GENERAL: "General",
+};
+
+export const AvailableFeedbackTypes = Object.values(FeedbackTypeEnum);
+
+export const FeedbackStatusEnum = {
+    PENDING: "pending",
+    RESOLVED: "resolved",
+};
+
+export const AvailableFeedbackStatuses = Object.values(FeedbackStatusEnum);

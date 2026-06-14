@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +18,20 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { feedbackApi } from '@/api/feedback';
+import { FeedbackModal } from '@/components/shared/FeedbackModal';
 
 export default function Index() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  const { data: publicStats } = useQuery({
+    queryKey: ['public-stats'],
+    queryFn: () => feedbackApi.getPublicStats(),
+  });
+
+  const totalUsers = (publicStats?.data?.totalUsers && publicStats.data.totalUsers > 0) ? publicStats.data.totalUsers : 100;
+
 
   return (
     <div className="min-h-screen bg-background select-none font-sans overflow-x-hidden font-normal">
@@ -102,6 +115,13 @@ export default function Index() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
+            </div>
+
+            <div className="pt-2 flex flex-col items-center gap-2">
+              <Badge variant="outline" className="py-1 px-3 border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 gap-1.5 rounded-full font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Join {totalUsers}+ engineers optimizing their workflow
+              </Badge>
             </div>
 
             {!isAuthenticated && (
@@ -504,6 +524,12 @@ export default function Index() {
               >
                 Security
               </Link>
+              <button 
+                onClick={() => setIsFeedbackOpen(true)}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider bg-transparent border-0 cursor-pointer p-0"
+              >
+                Send Feedback
+              </button>
             </div>
           </div>
           
@@ -516,6 +542,9 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      <FeedbackModal open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
     </div>
   );
 }
+

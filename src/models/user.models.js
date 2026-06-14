@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { AvailableSystemRoles, SystemRolesEnum } from "../utils/constants.js";
 
 dotenv.config();
 
@@ -45,6 +46,11 @@ const userSchema = new Schema(
     isEmailVerified: {
       type: Boolean,
       default: true,
+    },
+    role: {
+      type: String,
+      enum: AvailableSystemRoles,
+      default: SystemRolesEnum.USER,
     },
     refreshToken: {
       type: String,

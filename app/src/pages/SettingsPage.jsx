@@ -1,15 +1,18 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { Bell, Moon, Sun, Monitor, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { FeedbackModal } from '@/components/shared/FeedbackModal';
 
 export default function SettingsPage() {
   const { theme, isDark, setLightTheme, setDarkTheme, setSystemTheme } = useTheme();
   const { toast } = useToast();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const [pushNotifications, setPushNotifications] = useState(() => {
     return localStorage.getItem('pushNotifications') === 'true';
@@ -214,10 +217,26 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Have a suggestion?</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Share your feedback to help us build a better platform.</p>
+              </div>
+              <Button 
+                onClick={() => setIsFeedbackOpen(true)}
+                variant="outline"
+                className="transition-base border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-xs py-1.5 h-8 font-semibold shrink-0"
+              >
+                Give Feedback
+              </Button>
+            </div>
           </div>
 
         </CardContent>
       </Card>
+      
+      <FeedbackModal open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { SystemRolesEnum } from "../utils/constants.js";
 
 dotenv.config();
 
@@ -67,4 +68,11 @@ const validateProjectPermission = (roles = []) =>
     next();
   });
 
-export { isLoggedIn, validateProjectPermission };
+const isSuperAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== SystemRolesEnum.SUPERADMIN) {
+    return res.status(403).json(new ApiError(403, "Access denied. Super Admin role required."));
+  }
+  next();
+};
+
+export { isLoggedIn, validateProjectPermission, isSuperAdmin };
