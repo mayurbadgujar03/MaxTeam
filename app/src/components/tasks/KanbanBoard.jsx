@@ -23,9 +23,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 const columns = [
-  { id: 'todo', title: 'To Do', color: 'bg-muted' },
-  { id: 'in_progress', title: 'In Progress', color: 'bg-blue-100' },
-  { id: 'done', title: 'Done', color: 'bg-green-100' },
+  { id: 'todo', title: 'To Do', color: 'bg-status-todo' },
+  { id: 'in_progress', title: 'In Progress', color: 'bg-status-in-progress' },
+  { id: 'done', title: 'Done', color: 'bg-status-done' },
 ];
 
 export function KanbanBoard({ tasks, projectId, onCreateTask, canManageTasks = false, currentUserId, currentUserRole, initialTaskId, onTaskModalClose }) {
@@ -187,7 +187,7 @@ export function KanbanBoard({ tasks, projectId, onCreateTask, canManageTasks = f
                   )}
                 </div>
 
-                <div className="flex flex-1 flex-col gap-2 p-2 pt-0">
+                <div className="flex flex-1 flex-col gap-3 p-3 pt-0">
                   {columnTasks.map((task) => (
                     <DraggableTaskCard
                       key={task._id}

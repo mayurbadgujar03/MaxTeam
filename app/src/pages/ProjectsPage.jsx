@@ -100,27 +100,31 @@ export default function ProjectsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
               <Link key={project._id} to={`/projects/${project._id}`}>
-                <Card className="h-full cursor-pointer transition-all hover:border-foreground/20 hover:shadow-soft">
+                <Card className="h-full cursor-pointer hover-lift border border-slate-200 dark:border-slate-800 bg-card">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                         <FolderKanban className="h-5 w-5 text-muted-foreground" />
                       </div>
                     </div>
-                    <CardTitle className="mt-3 text-base">{project.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
+                    <CardTitle className="mt-3 text-base text-slate-900 dark:text-slate-50">{project.name}</CardTitle>
+                    <CardDescription className="line-clamp-2 text-slate-500 dark:text-slate-400">
                       {project.description || 'No description'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        {project.memberCount || 1} members
+                    <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                        <span>
+                          {project.members?.length || 0} {project.members?.length === 1 ? 'Member' : 'Members'}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })}
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                        <span>
+                          {formatDistanceToNow(new Date(project.updatedAt || project.createdAt), { addSuffix: true })}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -132,24 +136,29 @@ export default function ProjectsPage() {
           <div className="space-y-2">
             {projects.map((project) => (
               <Link key={project._id} to={`/projects/${project._id}`}>
-                <Card className="cursor-pointer transition-all hover:border-foreground/20 hover:shadow-soft">
+                <Card className="cursor-pointer hover-lift border border-slate-200 dark:border-slate-800 bg-card">
                   <CardContent className="flex items-center gap-4 p-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                       <FolderKanban className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate">{project.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-50 truncate">{project.name}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                         {project.description || 'No description'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {project.memberCount || 1}
+                    <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-slate-400" />
+                        <span>
+                          {project.members?.length || 0} {project.members?.length === 1 ? 'Member' : 'Members'}
+                        </span>
                       </div>
-                      <div className="hidden sm:block">
-                        {formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })}
+                      <div className="hidden sm:flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 text-slate-400" />
+                        <span>
+                          {formatDistanceToNow(new Date(project.updatedAt || project.createdAt), { addSuffix: true })}
+                        </span>
                       </div>
                     </div>
                   </CardContent>

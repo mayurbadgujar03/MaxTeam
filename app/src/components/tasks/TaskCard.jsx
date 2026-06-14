@@ -17,7 +17,7 @@ export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks =
   return (
     <Card
       className={cn(
-        'cursor-pointer transition-all hover:border-foreground/20 hover:shadow-soft',
+        'cursor-pointer shadow-card transition-base hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-soft',
         isDragging && 'rotate-2 shadow-elevated'
       )}
       onClick={onClick}

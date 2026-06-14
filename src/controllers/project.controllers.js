@@ -28,9 +28,22 @@ const getProjects = asyncHandler(async (req, res) => {
 
   const projects = await Project.find({ _id: { $in: projectIds } });
 
+  // Fetch all members for these projects
+  const allMembers = await ProjectMember.find({ project: { $in: projectIds } })
+    .populate("user", "username fullname avatar");
+
+  // Attach members list to each project object
+  const projectsWithMembers = projects.map((p) => {
+    const projectMembers = allMembers.filter((m) => m.project.toString() === p._id.toString());
+    return {
+      ...p.toObject(),
+      members: projectMembers,
+    };
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200, projects, "Projects fetched successfully"));
+    .json(new ApiResponse(200, projectsWithMembers, "Projects fetched successfully"));
 });
 
 const getProjectById = asyncHandler(async (req, res) => {

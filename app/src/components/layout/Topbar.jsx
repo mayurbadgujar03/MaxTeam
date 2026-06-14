@@ -24,14 +24,14 @@ export function Topbar({ title, onMenuClick }) {
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden h-9 w-9 shrink-0"
+          className="md:hidden h-10 w-10 shrink-0"
           onClick={onMenuClick}
           title="Open Menu"
           aria-label="Open Menu"
         >
           <Menu className="h-5 w-5" />
         </Button>
-        {title && <h1 className="text-base md:text-lg font-semibold text-foreground truncate">{title}</h1>}
+        {title && <h1 className="text-lg md:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>}
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
