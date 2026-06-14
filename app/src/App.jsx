@@ -18,6 +18,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,16 @@ const App = () => (
                     <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                  </Route>
+
+                  <Route
+                    element={
+                      <ProtectedRoute allowedRoles={["superadmin"]}>
+                        <DashboardLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="/admin" element={<AdminDashboardPage />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />

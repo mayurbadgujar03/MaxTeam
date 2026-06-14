@@ -1,4 +1,4 @@
-import { Home, FolderKanban, Settings, User, LogOut } from 'lucide-react';
+import { Home, FolderKanban, Settings, User, LogOut, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +65,20 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
               {item.name}
             </NavLink>
           ))}
+
+          {user?.role === 'superadmin' && (
+            <NavLink
+              to="/admin"
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent'
+              )}
+              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <Shield className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+              Admin Panel
+            </NavLink>
+          )}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">

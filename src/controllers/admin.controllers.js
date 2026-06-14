@@ -8,6 +8,7 @@ import { AvailableFeedbackStatuses } from "../utils/constants.js";
 const getAdminStats = asyncHandler(async (req, res) => {
   const totalUsers = await User.countDocuments();
   const activeProjects = await Project.countDocuments();
+  const totalFeedback = await Feedback.countDocuments();
   
   const recentFeedback = await Feedback.find()
     .sort({ createdAt: -1 })
@@ -20,6 +21,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
       {
         totalUsers,
         activeProjects,
+        totalFeedback,
         recentFeedback,
       },
       "Admin stats fetched successfully"
