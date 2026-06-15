@@ -217,11 +217,35 @@ const deleteProject = asyncHandler(async (req, res) => {
     }
   }
 
-  await Project.findByIdAndDelete(projectId);
-  await ProjectMember.deleteMany({ project: projectId });
-  await ProjectTask.deleteMany({ project: projectId });
-  await ProjectSubTask.deleteMany({ project: projectId });
-  await ProjectNote.deleteMany({ project: projectId });
+  // ── Smart Delete: hard-delete empty projects, soft-delete populated ones ──
+  const taskCount = await ProjectTask.countDocuments({ project: projectId });
+
+  if (taskCount === 0) {
+    // No tasks — accidental/empty project, purge entirely from the database
+    await Project.findByIdAndDelete(projectId);
+    await ProjectMember.deleteMany({ project: projectId, deletedAt: { $exists: true } });
+    await ProjectNote.deleteMany({ project: projectId, deletedAt: { $exists: true } });
+  } else {
+    // Has tasks — soft-delete the project and cascade to all children
+    const now = new Date();
+    await Project.findByIdAndUpdate(projectId, { deletedAt: now });
+    await ProjectMember.updateMany(
+      { project: projectId, deletedAt: null },
+      { deletedAt: now },
+    );
+    await ProjectTask.updateMany(
+      { project: projectId, deletedAt: null },
+      { deletedAt: now },
+    );
+    await ProjectSubTask.updateMany(
+      { project: projectId, deletedAt: null },
+      { deletedAt: now },
+    );
+    await ProjectNote.updateMany(
+      { project: projectId, deletedAt: null },
+      { deletedAt: now },
+    );
+  }
 
   return res
     .status(200)
@@ -331,10 +355,14 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 const deleteMember = asyncHandler(async (req, res) => {
   const { projectId, memberId } = req.params;
 
-  const deletedMember = await ProjectMember.findOneAndDelete({
-    user: new mongoose.Types.ObjectId(memberId),
-    project: new mongoose.Types.ObjectId(projectId),
-  });
+  const deletedMember = await ProjectMember.findOneAndUpdate(
+    {
+      user: new mongoose.Types.ObjectId(memberId),
+      project: new mongoose.Types.ObjectId(projectId),
+    },
+    { deletedAt: new Date() },
+    { new: true },
+  );
 
   if (!deletedMember) {
     return res

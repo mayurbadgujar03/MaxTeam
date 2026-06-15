@@ -249,7 +249,7 @@ const deleteNote = asyncHandler(async (req, res) => {
     }
   }
 
-  await ProjectNote.findByIdAndDelete(noteId);
+  await ProjectNote.findByIdAndUpdate(noteId, { deletedAt: new Date() });
 
 
 

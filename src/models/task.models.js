@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { AvailableTaskStatuses, TaskStatusEnum } from "../utils/constants.js";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 const taskSchema = new Schema(
   {
     title: {
@@ -51,5 +52,7 @@ const taskSchema = new Schema(
     timestamps: true,
   },
 );
+
+taskSchema.plugin(softDeletePlugin);
 
 export const ProjectTask = mongoose.model("Task", taskSchema);

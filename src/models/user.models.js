@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { AvailableSystemRoles, SystemRolesEnum } from "../utils/constants.js";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 dotenv.config();
 
@@ -82,5 +83,7 @@ userSchema.methods.generateRefreshToken = function () {
     { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
   );
 };
+
+userSchema.plugin(softDeletePlugin);
 
 export const User = mongoose.model("User", userSchema);

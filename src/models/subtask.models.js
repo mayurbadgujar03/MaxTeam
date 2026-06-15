@@ -1,4 +1,5 @@
 import mongoose, { mongo, Schema } from "mongoose";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 const subtaskSchema = new Schema(
   {
@@ -31,5 +32,7 @@ const subtaskSchema = new Schema(
     timestamps: true,
   },
 );
+
+subtaskSchema.plugin(softDeletePlugin);
 
 export const ProjectSubTask = mongoose.model("SubTask", subtaskSchema);

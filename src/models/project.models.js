@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 const projectSchema = new Schema(
   {
@@ -26,5 +27,7 @@ const projectSchema = new Schema(
     timestamps: true,
   },
 );
+
+projectSchema.plugin(softDeletePlugin);
 
 export const Project = mongoose.model("Project", projectSchema);

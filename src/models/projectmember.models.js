@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { AvailableUserRoles, UserRolesEnum } from "../utils/constants.js";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 const projectMemberSchema = new Schema(
   {
@@ -28,6 +29,8 @@ const projectMemberSchema = new Schema(
     timestamps: true,
   },
 );
+
+projectMemberSchema.plugin(softDeletePlugin);
 
 export const ProjectMember = mongoose.model(
   "ProjectMember",

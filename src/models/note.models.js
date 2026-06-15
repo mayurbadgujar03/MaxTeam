@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { AvailableNoteCategories } from "../utils/constants.js";
+import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 const projectNoteSchema = new Schema(
   {
@@ -41,5 +42,7 @@ const projectNoteSchema = new Schema(
     timestamps: true,
   },
 );
+
+projectNoteSchema.plugin(softDeletePlugin);
 
 export const ProjectNote = mongoose.model("ProjectNote", projectNoteSchema);

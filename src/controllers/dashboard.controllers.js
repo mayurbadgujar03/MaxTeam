@@ -22,10 +22,13 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     },
     {
       $facet: {
+        // Active tasks — only count non-deleted tasks
         activeTasks: [
-          { $match: { status: { $ne: TaskStatusEnum.DONE } } },
+          { $match: { status: { $ne: TaskStatusEnum.DONE }, deletedAt: null } },
           { $count: "count" },
         ],
+        // Completed tasks — INCLUDE soft-deleted so users retain
+        // historical credit for work done on deleted projects/tasks
         completedTasks: [
           {
             $match: {
@@ -35,11 +38,13 @@ const getDashboardStats = asyncHandler(async (req, res) => {
           },
           { $count: "count" },
         ],
+        // Overdue tasks — only count non-deleted tasks
         overdueTasks: [
           {
             $match: {
               status: { $ne: TaskStatusEnum.DONE },
               dueDate: { $lt: new Date() },
+              deletedAt: null,
             },
           },
           { $count: "count" },

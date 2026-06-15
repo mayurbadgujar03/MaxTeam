@@ -279,8 +279,13 @@ const deleteTask = asyncHandler(async (req, res) => {
 
   const taskTitle = task.title;
 
-  await ProjectSubTask.deleteMany({ task: taskId });
-  await task.deleteOne();
+  // Soft-delete the task and cascade to its subtasks
+  const now = new Date();
+  await ProjectSubTask.updateMany(
+    { task: taskId, deletedAt: null },
+    { deletedAt: now },
+  );
+  await ProjectTask.findByIdAndUpdate(taskId, { deletedAt: now });
 
   const project = await Project.findById(projectId);
   const deleter = await User.findById(req.user._id);
@@ -441,7 +446,7 @@ const deleteSubTask = asyncHandler(async (req, res) => {
   const taskId = subtask.task;
   const projectId = subtask.project;
 
-  await subtask.deleteOne();
+  await ProjectSubTask.findByIdAndUpdate(subtaskId, { deletedAt: new Date() });
 
   const task = await ProjectTask.findById(taskId);
   const project = await Project.findById(projectId);
