@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -19,6 +19,10 @@ import ProjectDetailPage from "./pages/ProjectDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+
+const Router = typeof window !== 'undefined' && window.navigator.userAgent.toLowerCase().includes('electron')
+  ? HashRouter
+  : BrowserRouter;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +42,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
+              <Router>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth/login" element={<LoginPage />} />
@@ -74,7 +78,7 @@ const App = () => (
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </BrowserRouter>
+              </Router>
             </TooltipProvider>
           </NotificationProvider>
         </SocketProvider>

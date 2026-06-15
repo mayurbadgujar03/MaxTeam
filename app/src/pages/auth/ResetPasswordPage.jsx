@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, CheckCircle } from 'lucide-react';
+import { FlowbaseLogo } from '@/components/shared/FlowbaseLogo';
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -83,7 +84,7 @@ export default function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface-sunken p-4">
       <div className="w-full max-w-md animate-fade-in">
         <Link to="/" className="mb-8 flex justify-center transition-opacity hover:opacity-80">
-          <img src="/logo.png" alt="Flowbase" className="h-16 w-auto" />
+          <FlowbaseLogo size="lg" />
         </Link>
 
         <Card className="border-0 shadow-elevated">

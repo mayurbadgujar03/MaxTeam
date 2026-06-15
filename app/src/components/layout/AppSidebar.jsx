@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { FlowbaseLogo } from '@/components/shared/FlowbaseLogo';
 
 const navigation = [
   { name: 'Home', href: '/dashboard', icon: Home },
@@ -47,7 +48,7 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
           className="flex h-16 items-center justify-center border-b border-sidebar-border px-6 transition-opacity hover:opacity-80"
           onClick={() => setIsSidebarOpen(false)}
         >
-          <img src="/logo.png" alt="Flowbase" className="h-14 w-auto" />
+          <FlowbaseLogo size="md" />
         </Link>
 
         <nav className="flex-1 space-y-1 p-4">

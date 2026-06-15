@@ -15,17 +15,20 @@ import publicRouter from "./routes/public.routes.js";
 import feedbackRouter from "./routes/feedback.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 
-app.use(cors({
-  origin: function (origin, callback) {
-    const allowedOrigins = [
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : [
       "http://localhost:5173",
       "http://localhost:8080",
-      "https://flowbaseapp.vercel.app"
+      "https://flowbaseapp.vercel.app",
     ];
+
+app.use(cors({
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,

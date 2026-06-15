@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlowbaseLogo } from '@/components/shared/FlowbaseLogo';
 
 export default function LoginPage() {
   const handleGoogleLogin = () => {
@@ -13,7 +14,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <Link to="/" className="mb-8 flex justify-center transition-opacity hover:opacity-80">
-          <img src="/logo.png" alt="Flowbase" className="h-16 w-auto" />
+          <FlowbaseLogo size="lg" />
         </Link>
 
         <Card className="border-0 shadow-elevated">

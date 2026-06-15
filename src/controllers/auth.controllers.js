@@ -3,13 +3,9 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
 
-import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
-dotenv.config();
-
 const googleLogin = (req, res) => {
-  console.log("THE CLIENT ID IS:", process.env.GOOGLE_CLIENT_ID);
 
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
   const options = {

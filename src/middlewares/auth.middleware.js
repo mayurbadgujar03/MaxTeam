@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 
 import { User } from "../models/user.models.js";
@@ -7,8 +6,6 @@ import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { SystemRolesEnum } from "../utils/constants.js";
-
-dotenv.config();
 
 const isLoggedIn = async (req, res, next) => {
   const token = req.cookies?.accessToken;

@@ -2,11 +2,12 @@
   "name": "maxteam",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "electron/main.js",
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "node src/index.js",
+    "build:desktop": "npm run build:desktop --prefix app"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +27,10 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.3",
     "nodemon": "^3.1.10",
-    "prettier": "3.6.2"
+    "prettier": "3.6.2",
+    "vite-plugin-electron": "^1.0.4"
   }
 }

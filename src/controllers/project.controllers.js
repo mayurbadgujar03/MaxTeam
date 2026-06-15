@@ -11,7 +11,6 @@ import { ProjectMember } from "../models/projectmember.models.js";
 import { Notification } from "../models/notification.models.js";
 import { clearProjectCommitCache } from "./codetrack.controllers.js";
 import mongoose from "mongoose";
-import { type } from "os";
 
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;

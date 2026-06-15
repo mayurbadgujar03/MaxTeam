@@ -15,11 +15,13 @@ import {
   CheckCircle,
   Smartphone,
   Layers,
-  Check
+  Check,
+  Monitor
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { feedbackApi } from '@/api/feedback';
 import { FeedbackModal } from '@/components/shared/FeedbackModal';
+import { FlowbaseLogo } from '@/components/shared/FlowbaseLogo';
 
 export default function Index() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -42,10 +44,7 @@ export default function Index() {
             to={isAuthenticated ? "/dashboard" : "/"} 
             className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
-            <img src="/logo_tab_icon.png" alt="Flowbase Logo" className="h-8 w-auto" />
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-              Flowbase
-            </span>
+            <FlowbaseLogo size="sm" />
           </Link>
 
           {/* Navigation Links with smooth scroll (Pricing Removed) */}
@@ -108,13 +107,21 @@ export default function Index() {
             </p>
 
             {/* Tightened Single High-Converting CTA */}
-            <div className="pt-4 flex justify-center">
+            <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-4">
               <Link to={isAuthenticated ? "/dashboard" : "/auth/login"} className="w-full sm:w-auto flex justify-center">
                 <Button size="lg" className="w-full sm:w-auto font-semibold px-8 h-12 gap-2 shadow-elevated transition-base">
                   {isAuthenticated ? "Go to Dashboard" : "Start for free"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold px-8 h-12 gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-base">
+                <Monitor className="h-4 w-4 text-indigo-500" />
+                Download App
+              </Button>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground/75 font-semibold mt-1.5">
+              Available for <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">Windows (.exe)</Link> and <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">macOS (.dmg)</Link>
             </div>
 
             <div className="pt-2 flex flex-col items-center gap-2">
@@ -504,8 +511,7 @@ export default function Index() {
         <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <img src="/logo_tab_icon.png" alt="Flowbase Logo" className="h-7 w-auto" />
-              <span className="font-bold text-lg tracking-tight text-foreground">Flowbase</span>
+              <FlowbaseLogo size="sm" />
             </div>
             
             {/* Elegant single row matching navigation */}
