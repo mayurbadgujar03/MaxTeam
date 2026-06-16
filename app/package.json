@@ -100,13 +100,13 @@
       "build/**/*"
     ],
     "mac": {
-      "icon": "icons/icon.icns"
+      "icon": "public/logo_tab_icon.png"
     },
     "win": {
-      "icon": "icons/win-icon.ico"
+      "icon": "public/logo_tab_icon.png"
     },
     "linux": {
-      "icon": "icons/icon.png"
+      "icon": "public/logo_tab_icon.png"
     }
   }
 }

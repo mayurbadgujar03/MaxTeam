@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     }),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
+      includeAssets: ["logo_tab_icon.png"],
       manifest: {
         name: "Flowbase",
         short_name: "Flowbase",
@@ -29,14 +29,15 @@ export default defineConfig(({ mode }) => ({
         display: "standalone",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "logo_tab_icon.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "logo_tab_icon.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any maskable",
           },
         ],
       },
