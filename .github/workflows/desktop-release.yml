@@ -1,0 +1,50 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm install
+
+      - name: Inject production environment
+        working-directory: app
+        shell: bash
+        run: echo "VITE_API_URL=https://api.flowbase.mayurbadgujar.me/api/v1" > .env
+
+      - name: Build desktop app
+        working-directory: app
+        run: npm run build:desktop
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/dist-desktop/*.exe
+            app/dist-desktop/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
