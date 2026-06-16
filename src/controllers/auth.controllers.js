@@ -5,6 +5,33 @@ import { User } from "../models/user.models.js";
 
 import jwt from "jsonwebtoken";
 
+// Helper to parse JWT expiry string (e.g., "1d", "7d", "15m", "2h") into milliseconds for cookie maxAge
+const parseExpiryToMs = (expiryStr, defaultMs) => {
+  if (!expiryStr) return defaultMs;
+
+  const numericValue = parseInt(expiryStr, 10);
+  if (isNaN(numericValue)) return defaultMs;
+
+  const unit = expiryStr.replace(String(numericValue), "").trim().toLowerCase();
+
+  switch (unit) {
+    case "s":
+      return numericValue * 1000;
+    case "m":
+      return numericValue * 60 * 1000;
+    case "h":
+      return numericValue * 60 * 60 * 1000;
+    case "d":
+      return numericValue * 24 * 60 * 60 * 1000;
+    case "w":
+      return numericValue * 7 * 24 * 60 * 60 * 1000;
+    case "y":
+      return numericValue * 365 * 24 * 60 * 60 * 1000;
+    default:
+      return numericValue;
+  }
+};
+
 const googleLogin = (req, res) => {
 
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -127,13 +154,13 @@ const googleCallback = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 15 * 60 * 1000,
+      maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
     res
@@ -156,11 +183,17 @@ const logoutUser = asyncHandler(async (req, res) => {
   await user.save();
   res.cookie("refreshToken", "", {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     expires: new Date(0),
+    maxAge: 0,
   });
   res.cookie("accessToken", "", {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     expires: new Date(0),
+    maxAge: 0,
   });
 
   return res.status(200).json(new ApiResponse(200, "LoggedOut the user"));
@@ -193,13 +226,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 15 * 60 * 1000,
+      maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
     res
