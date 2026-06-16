@@ -16,7 +16,8 @@ import {
   Smartphone,
   Layers,
   Check,
-  Monitor
+  Monitor,
+  Command
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { feedbackApi } from '@/api/feedback';
@@ -114,14 +115,31 @@ export default function Index() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold px-8 h-12 gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-base">
-                <Monitor className="h-4 w-4 text-indigo-500" />
-                Download App
-              </Button>
             </div>
 
-            <div className="text-[11px] text-muted-foreground/75 font-semibold mt-1.5">
-              Available for <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">Windows (.exe)</Link> and <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">macOS (.dmg)</Link>
+            <div className="pt-3 flex gap-3 justify-center items-center">
+              <a
+                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.1/Flowbase.Setup.0.0.0.exe"
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                <Button size="sm" variant="outline" className="font-medium gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-base">
+                  <Monitor className="h-3.5 w-3.5 text-blue-500" />
+                  Windows (.exe)
+                </Button>
+              </a>
+              <a
+                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.1/Flowbase-0.0.0-arm64.dmg"
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                <Button size="sm" variant="outline" className="font-medium gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-base">
+                  <Command className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
+                  macOS (.dmg)
+                </Button>
+              </a>
             </div>
 
             <div className="pt-2 flex flex-col items-center gap-2">
