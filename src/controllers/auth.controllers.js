@@ -141,7 +141,7 @@ const googleCallback = asyncHandler(async (req, res) => {
       .cookie("refreshToken", refreshToken, refreshOptions);
 
     // 7. Redirect to the frontend dashboard
-    const frontendUrl = process.env.BASE_URL || "http://localhost:8080";
+    const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || "http://localhost:8080";
     return res.redirect(`${frontendUrl}/dashboard`);
   } catch (error) {
     console.error("Google OAuth error:", error);
