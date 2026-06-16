@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowRight, 
-  CheckSquare, 
-  Users, 
-  FileText, 
-  Zap, 
+import {
+  ArrowRight,
+  CheckSquare,
+  Users,
+  FileText,
+  Zap,
   Home,
   Sparkles,
   Calendar,
@@ -48,8 +48,8 @@ export default function Index() {
       {/* 1. Sticky Navigation Bar (Top) */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md transition-all">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-          <Link 
-            to={isAuthenticated ? "/dashboard" : "/"} 
+          <Link
+            to={isAuthenticated ? "/dashboard" : "/"}
             className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
             <FlowbaseLogo size="sm" />
@@ -57,16 +57,16 @@ export default function Index() {
 
           {/* Navigation Links with smooth scroll (Pricing Removed) */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link 
-              to="#features" 
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} 
+            <Link
+              to="#features"
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-xs font-semibold tracking-wide text-muted-foreground hover:text-foreground transition-colors uppercase"
             >
               Features
             </Link>
-            <Link 
-              to="#security" 
-              onClick={() => document.getElementById('security')?.scrollIntoView({ behavior: 'smooth' })} 
+            <Link
+              to="#security"
+              onClick={() => document.getElementById('security')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-xs font-semibold tracking-wide text-muted-foreground hover:text-foreground transition-colors uppercase"
             >
               Security
@@ -126,7 +126,7 @@ export default function Index() {
 
             <div className="pt-3 flex gap-3 justify-center items-center">
               <a
-                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.1/Flowbase.Setup.0.0.0.exe"
+                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.3/Flowbase.Setup.0.0.0.exe"
                 target="_blank"
                 rel="noopener noreferrer"
                 download
@@ -137,7 +137,7 @@ export default function Index() {
                 </Button>
               </a>
               <a
-                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.1/Flowbase-0.0.0-arm64.dmg"
+                href="https://github.com/mayurbadgujar03/MaxTeam/releases/download/v1.0.3/Flowbase-0.0.0-arm64.dmg"
                 target="_blank"
                 rel="noopener noreferrer"
                 download
@@ -297,7 +297,7 @@ export default function Index() {
                 ))}
               </ul>
             </div>
-            
+
             {/* Visual element on right */}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-card transition-base hover:shadow-soft hover:-translate-y-1 select-none text-left">
               <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-3">
@@ -454,7 +454,7 @@ export default function Index() {
                       <span className="text-[8px] text-status-in-progress font-medium">In Progress</span>
                     </div>
                   </div>
-                  
+
                   {/* Toast Mockup */}
                   <div className="bg-foreground text-background p-2.5 rounded-xl shadow-lg border border-border/10 space-y-1.5">
                     <div className="text-[8px] font-extrabold flex items-center gap-1 text-primary-foreground uppercase tracking-wider">
@@ -538,24 +538,24 @@ export default function Index() {
             <div className="flex items-center gap-2.5">
               <FlowbaseLogo size="sm" />
             </div>
-            
+
             {/* Elegant single row matching navigation */}
             <div className="flex flex-wrap justify-center gap-8">
-              <Link 
-                to="#features" 
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} 
+              <Link
+                to="#features"
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
               >
                 Features
               </Link>
-              <Link 
-                to="#security" 
-                onClick={() => document.getElementById('security')?.scrollIntoView({ behavior: 'smooth' })} 
+              <Link
+                to="#security"
+                onClick={() => document.getElementById('security')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
               >
                 Security
               </Link>
-              <button 
+              <button
                 onClick={() => setIsFeedbackOpen(true)}
                 className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider bg-transparent border-0 cursor-pointer p-0"
               >
@@ -563,7 +563,7 @@ export default function Index() {
               </button>
             </div>
           </div>
-          
+
           <div className="mt-8 border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground/80">
             <p>© 2026 Flowbase. All rights reserved.</p>
             <div className="flex gap-6">
