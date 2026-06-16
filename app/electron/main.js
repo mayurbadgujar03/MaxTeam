@@ -13,7 +13,7 @@ function createWindow() {
     height: 800,
     backgroundColor: '#0f172a', // slate dark background
     autoHideMenuBar: true,
-    icon: path.join(__dirname, '../build/icon.png'),
+    icon: path.join(__dirname, '../public/logo_tab_icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

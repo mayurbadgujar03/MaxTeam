@@ -114,15 +114,9 @@ class ApiClient {
 
   async upload(endpoint, formData) {
     const url = `${this.baseUrl}${endpoint}`;
-    
-    const headers = {};
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
 
     const response = await fetch(url, {
       method: 'POST',
-      headers,
       body: formData,
       credentials: 'include',
     });
