@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { notesApi } from '@/api/notes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,19 @@ const CATEGORIES = Object.entries(CATEGORY_CONFIG).map(([value, { label }]) => (
   value,
   label,
 }));
+
+const customSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'img'],
+  attributes: {
+    ...(defaultSchema.attributes || {}),
+    img: ['src', 'alt', 'width', 'height', 'data'],
+  },
+  protocols: {
+    ...(defaultSchema.protocols || {}),
+    src: [...(defaultSchema.protocols?.src || []), 'http', 'https', 'data'],
+  }
+};
 
 // ── NoteEditor ──────────────────────────────────────────────────────────────
 // Props:
@@ -294,10 +308,11 @@ export function NoteEditor({
       <div className="flex-1 overflow-hidden">
         {isPreview || !canEdit ? (
           // Read-only or Preview mode: clean rendered Markdown preview, no toolbars
-          <div className="h-full overflow-y-auto px-5 py-3">
+          <div className="h-full overflow-y-auto px-5 py-3 prose dark:prose-invert max-w-none">
             <MDEditor.Markdown
               source={content || '_No content yet._'}
               style={{ whiteSpace: 'pre-wrap', background: 'transparent' }}
+              rehypePlugins={[[rehypeSanitize, customSchema]]}
             />
           </div>
         ) : (
@@ -319,6 +334,9 @@ export function NoteEditor({
               commands.codeBlock,
             ]}
             extraCommands={[]}
+            previewOptions={{
+              rehypePlugins: [[rehypeSanitize, customSchema]],
+            }}
             style={{
               borderRadius: 0,
               border: 'none',
