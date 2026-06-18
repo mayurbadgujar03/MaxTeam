@@ -24,6 +24,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('isLoggedIn', 'true');
         // Clean the URL so the user doesn't see the query param
         window.history.replaceState({}, document.title, window.location.pathname);
+        // Introduce a small delay to allow the browser to fully persist the HttpOnly cookies
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       const isLoggedInFlag = localStorage.getItem('isLoggedIn') === 'true';
@@ -35,10 +37,12 @@ export const AuthProvider = ({ children }) => {
       try {
         await refreshUser();
       } catch (error) {
+        console.error("Auth Context Error - refreshUser failed:", error);
         try {
           await authApi.refreshToken();
           await refreshUser();
         } catch (refreshError) {
+          console.error("Auth Context Error - Token refresh completely failed:", refreshError);
           setUser(null);
           localStorage.removeItem('isLoggedIn');
         }
