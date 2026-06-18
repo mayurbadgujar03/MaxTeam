@@ -11,18 +11,30 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.getCurrentUser();
       setUser(response.data.user);
-    } catch {
+    } catch (error) {
       setUser(null);
+      throw error;
     }
   }, []);
 
   useEffect(() => {
     const initAuth = async () => {
+      const isLoggedInFlag = localStorage.getItem('isLoggedIn') === 'true';
+      if (!isLoggedInFlag) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        await authApi.refreshToken();
         await refreshUser();
-      } catch {
-        setUser(null);
+      } catch (error) {
+        try {
+          await authApi.refreshToken();
+          await refreshUser();
+        } catch (refreshError) {
+          setUser(null);
+          localStorage.removeItem('isLoggedIn');
+        }
       } finally {
         setIsLoading(false);
       }

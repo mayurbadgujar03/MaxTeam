@@ -3,16 +3,19 @@ import { apiClient } from '@/lib/api-client';
 export const authApi = {
   async login(credentials) {
     const response = await apiClient.post('/user/login', credentials);
+    localStorage.setItem('isLoggedIn', 'true');
     return response;
   },
 
   async register(credentials) {
     const response = await apiClient.post('/user/register', credentials);
+    localStorage.setItem('isLoggedIn', 'true');
     return response;
   },
 
   async logout() {
     const response = await apiClient.post('/user/logout');
+    localStorage.removeItem('isLoggedIn');
     return response;
   },
 
