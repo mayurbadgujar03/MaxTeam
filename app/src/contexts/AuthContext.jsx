@@ -19,6 +19,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('login') === 'success') {
+        localStorage.setItem('isLoggedIn', 'true');
+        // Clean the URL so the user doesn't see the query param
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
       const isLoggedInFlag = localStorage.getItem('isLoggedIn') === 'true';
       if (!isLoggedInFlag) {
         setIsLoading(false);
