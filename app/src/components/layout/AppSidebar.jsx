@@ -39,16 +39,16 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
 
       <aside
         className={cn(
-          "flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "group flex h-screen flex-col border-r border-sidebar-border bg-sidebar fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out w-64 md:w-16 md:hover:w-64 overflow-hidden",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
         <Link
           to="/dashboard"
-          className="flex h-16 items-center justify-center border-b border-sidebar-border px-6 transition-opacity hover:opacity-80"
+          className="flex h-16 items-center justify-start border-b border-sidebar-border px-4 transition-opacity hover:opacity-80 whitespace-nowrap overflow-hidden"
           onClick={() => setIsSidebarOpen(false)}
         >
-          <FlowbaseLogo size="md" />
+          <FlowbaseLogo size="md" textClassName="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100" />
         </Link>
 
         <nav className="flex-1 space-y-1 p-4">
@@ -57,13 +57,15 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent'
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
               )}
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <item.icon className="h-5 w-5" />
-              {item.name}
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+                {item.name}
+              </span>
             </NavLink>
           ))}
 
@@ -71,26 +73,28 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
             <NavLink
               to="/admin"
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent'
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
               )}
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <Shield className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
-              Admin Panel
+              <Shield className="h-5 w-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+                Admin Panel
+              </span>
             </NavLink>
           )}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
-          <div className="mb-3 flex items-center gap-3 px-2">
-            <Avatar className="h-9 w-9">
+          <div className="mb-3 flex items-center gap-3 px-2 whitespace-nowrap">
+            <Avatar className="h-9 w-9 shrink-0">
               <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
               <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
               <p className="truncate text-sm font-medium text-sidebar-foreground">
                 {user?.fullname || user?.username}
               </p>
@@ -99,14 +103,16 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
           </div>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground whitespace-nowrap px-2"
             onClick={() => {
               setIsSidebarOpen(false);
               logout();
             }}
           >
-            <LogOut className="h-4 w-4" />
-            Sign out
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+              Sign out
+            </span>
           </Button>
         </div>
       </aside>

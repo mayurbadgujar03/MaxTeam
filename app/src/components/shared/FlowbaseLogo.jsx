@@ -6,7 +6,7 @@ const sizes = {
   lg: { text: 'text-3xl', icon: 'h-10 w-10', gap: 'gap-3' },
 };
 
-export function FlowbaseLogo({ size = 'sm', className }) {
+export function FlowbaseLogo({ size = 'sm', className, textClassName }) {
   const s = sizes[size] || sizes.sm;
 
   return (
@@ -21,7 +21,8 @@ export function FlowbaseLogo({ size = 'sm', className }) {
       <span
         className={cn(
           s.text,
-          'font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-blue-600 bg-clip-text text-transparent select-none'
+          'font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-blue-600 bg-clip-text text-transparent select-none',
+          textClassName
         )}
       >
         Flowbase
