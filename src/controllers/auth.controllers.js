@@ -154,12 +154,14 @@ const googleCallback = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
       maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
       maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
@@ -169,7 +171,7 @@ const googleCallback = asyncHandler(async (req, res) => {
 
     // 7. Redirect to the frontend dashboard
     const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || "http://localhost:8080";
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${frontendUrl}/dashboard?login=success`);
   } catch (error) {
     console.error("Google OAuth error:", error);
     return res.status(500).json(new ApiError(500, "Internal server error during Google authentication"));
@@ -185,6 +187,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
     expires: new Date(0),
     maxAge: 0,
   });
@@ -192,6 +195,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
     expires: new Date(0),
     maxAge: 0,
   });
@@ -226,12 +230,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
       maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
       maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
