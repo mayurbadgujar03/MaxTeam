@@ -6,7 +6,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import electron from "vite-plugin-electron";
 
 export default defineConfig(({ mode }) => ({
-  base: './',
+  base: '/',
   server: {
     host: "::",
     port: 8080,
