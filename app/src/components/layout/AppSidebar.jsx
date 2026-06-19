@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { FlowbaseLogo } from '@/components/shared/FlowbaseLogo';
 
 const navigation = [
   { name: 'Home', href: '/dashboard', icon: Home },
@@ -45,25 +44,32 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
       >
         <Link
           to="/dashboard"
-          className="flex h-16 items-center justify-start border-b border-sidebar-border px-4 transition-opacity hover:opacity-80 whitespace-nowrap overflow-hidden"
+          className="flex h-16 items-center justify-start border-b border-sidebar-border px-3 transition-opacity hover:opacity-80 whitespace-nowrap overflow-hidden"
           onClick={() => setIsSidebarOpen(false)}
         >
-          <FlowbaseLogo size="md" textClassName="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+            <img src="/logo_tab_icon.png" alt="Flowbase Logo" className="h-8 w-8 shrink-0 object-contain" />
+          </div>
+          <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 font-extrabold tracking-tight text-2xl bg-gradient-to-r from-indigo-400 to-blue-600 bg-clip-text text-transparent select-none ml-3">
+            Flowbase
+          </span>
         </Link>
 
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className="flex-1 space-y-1 py-4">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
+                'flex items-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
               )}
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
                 {item.name}
               </span>
             </NavLink>
@@ -73,28 +79,32 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
             <NavLink
               to="/admin"
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
+                'flex items-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
               )}
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <Shield className="h-5 w-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
-              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                <Shield className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
                 Admin Panel
               </span>
             </NavLink>
           )}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
-          <div className="mb-3 flex items-center gap-3 px-2 whitespace-nowrap">
-            <Avatar className="h-9 w-9 shrink-0">
-              <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
-              <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 overflow-hidden transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+        <div className="border-t border-sidebar-border py-4">
+          <div className="mb-3 flex items-center px-3 whitespace-nowrap">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+                <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="flex-1 overflow-hidden transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
               <p className="truncate text-sm font-medium text-sidebar-foreground">
                 {user?.fullname || user?.username}
               </p>
@@ -103,14 +113,16 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
           </div>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground whitespace-nowrap px-2"
+            className="w-full justify-start text-muted-foreground hover:text-foreground whitespace-nowrap px-3"
             onClick={() => {
               setIsSidebarOpen(false);
               logout();
             }}
           >
-            <LogOut className="h-4 w-4 shrink-0" />
-            <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <LogOut className="h-4 w-4" />
+            </div>
+            <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
               Sign out
             </span>
           </Button>
