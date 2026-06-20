@@ -18,18 +18,20 @@ import adminRouter from "./routes/admin.routes.js";
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
   : [
-      "http://localhost:5173",
-      "http://localhost:8080",
-      "https://flowbaseapp.vercel.app",
-      "https://flowbase.mayurbadgujar.me"
-    ];
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "https://flowbaseapp.vercel.app",
+    "https://flowbase.mayurbadgujar.me",
+    "https://mayurbadgujar.me",      // Added Portfolio (HTTPS)
+    "http://mayurbadgujar.me"        // Added Portfolio (HTTP)
+  ];
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(null, false);
     }
   },
   credentials: true,
