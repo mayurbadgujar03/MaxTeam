@@ -1,13 +1,19 @@
-.env
+# Node & Env
 node_modules
+.env
+app/.env
+
+# Vite & Bundlers
+*.timestamp-*
 .vercel
 
-# Electron / Vite build artifacts
+# Electron & Build Outputs
 app/dist/
-app/dist-electron/
 app/dist-desktop/
+app/dist-electron/
 app/build/
 app/icons/
 
-# Vite hot-reload cache
-*.timestamp-*
+# OS Files
+.DS_Store
+Thumbs.db

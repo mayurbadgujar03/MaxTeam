@@ -55,4 +55,7 @@ const taskSchema = new Schema(
 
 taskSchema.plugin(softDeletePlugin);
 
+taskSchema.index({ project: 1 });
+taskSchema.index({ assignedTo: 1 });
+
 export const ProjectTask = mongoose.model("Task", taskSchema);

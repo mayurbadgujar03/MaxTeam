@@ -32,6 +32,9 @@ const projectMemberSchema = new Schema(
 
 projectMemberSchema.plugin(softDeletePlugin);
 
+projectMemberSchema.index({ user: 1 });
+projectMemberSchema.index({ project: 1 });
+
 export const ProjectMember = mongoose.model(
   "ProjectMember",
   projectMemberSchema,

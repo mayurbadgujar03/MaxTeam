@@ -59,7 +59,7 @@ const getProjectCommits = asyncHandler(async (req, res) => {
   const requesterMembership = await ProjectMember.findOne({
     user: new mongoose.Types.ObjectId(req.user._id),
     project: new mongoose.Types.ObjectId(projectId),
-  });
+  }).lean();
 
   const allowedRoles = [UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN];
   if (!requesterMembership || !allowedRoles.includes(requesterMembership.role)) {
@@ -74,7 +74,7 @@ const getProjectCommits = asyncHandler(async (req, res) => {
   }
 
   // 2. Fetch the project and check githubRepoUrl is configured
-  const project = await Project.findById(projectId);
+  const project = await Project.findById(projectId).lean();
   if (!project) {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
@@ -118,7 +118,9 @@ const getProjectCommits = asyncHandler(async (req, res) => {
   // 4. Fetch members and build a lookup map: githubUsername → member info
   const members = await ProjectMember.find({
     project: new mongoose.Types.ObjectId(projectId),
-  }).populate("user", "username fullname avatar");
+  })
+    .populate("user", "username fullname avatar")
+    .lean();
 
   const githubUsernameMap = {}; // lowercased githubUsername → member
   for (const m of members) {

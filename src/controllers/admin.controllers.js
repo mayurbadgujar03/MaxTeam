@@ -13,7 +13,8 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const recentFeedback = await Feedback.find()
     .sort({ createdAt: -1 })
     .limit(10)
-    .populate("user", "username email fullname avatar");
+    .populate("user", "username email fullname avatar")
+    .lean();
 
   return res.status(200).json(
     new ApiResponse(

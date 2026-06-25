@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 const getDashboardStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const allMyProjects = await ProjectMember.find({ user: userId });
+  const allMyProjects = await ProjectMember.find({ user: userId }).lean();
   const allProjectIds = allMyProjects.map((pm) => pm.project);
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -63,7 +63,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   })
     .sort({ dueDate: 1 })
     .limit(5)
-    .populate("project", "name");
+    .populate("project", "name")
+    .lean();
 
   return res.status(200).json(
     new ApiResponse(

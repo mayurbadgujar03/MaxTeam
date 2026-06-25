@@ -17,7 +17,9 @@ const getProjects = asyncHandler(async (req, res) => {
 
   const memberShips = await ProjectMember.find({
     user: new mongoose.Types.ObjectId(userId),
-  }).select("project");
+  })
+    .select("project")
+    .lean();
 
   if (!memberShips.length) {
     return res.status(200).json(new ApiResponse(200, [], "No projects found"));
@@ -25,17 +27,18 @@ const getProjects = asyncHandler(async (req, res) => {
 
   const projectIds = memberShips.map((m) => m.project);
 
-  const projects = await Project.find({ _id: { $in: projectIds } });
+  const projects = await Project.find({ _id: { $in: projectIds } }).lean();
 
   // Fetch all members for these projects
   const allMembers = await ProjectMember.find({ project: { $in: projectIds } })
-    .populate("user", "username fullname avatar");
+    .populate("user", "username fullname avatar")
+    .lean();
 
   // Attach members list to each project object
   const projectsWithMembers = projects.map((p) => {
     const projectMembers = allMembers.filter((m) => m.project.toString() === p._id.toString());
     return {
-      ...p.toObject(),
+      ...p,
       members: projectMembers,
     };
   });
@@ -52,7 +55,7 @@ const getProjectById = asyncHandler(async (req, res) => {
   const memberShipsCheck = await ProjectMember.findOne({
     user: new mongoose.Types.ObjectId(userId),
     project: new mongoose.Types.ObjectId(projectId),
-  });
+  }).lean();
 
   if (!memberShipsCheck) {
     return res
@@ -63,7 +66,7 @@ const getProjectById = asyncHandler(async (req, res) => {
   const project = await Project.findById(projectId).populate(
     "createdBy",
     "username fullname avatar",
-  );
+  ).lean();
 
   if (!project) {
     return res.status(400).json(new ApiError(400, "Project not found"));
@@ -71,7 +74,9 @@ const getProjectById = asyncHandler(async (req, res) => {
 
   const projectMembers = await ProjectMember.find({
     project: new mongoose.Types.ObjectId(projectId),
-  }).populate("user", "username fullname avatar");
+  })
+    .populate("user", "username fullname avatar")
+    .lean();
 
   return res
     .status(200)
@@ -255,7 +260,7 @@ const deleteProject = asyncHandler(async (req, res) => {
 const getProjectMembers = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const existingProject = await Project.findById(projectId);
+  const existingProject = await Project.findById(projectId).lean();
 
   if (!existingProject) {
     return res.status(404).json(new ApiError(404, "Project not found"));
@@ -263,7 +268,9 @@ const getProjectMembers = asyncHandler(async (req, res) => {
 
   const projectMembers = await ProjectMember.find({
     project: new mongoose.Types.ObjectId(projectId),
-  }).populate("user", "username fullname avatar");
+  })
+    .populate("user", "username fullname avatar")
+    .lean();
 
   return res
     .status(200)

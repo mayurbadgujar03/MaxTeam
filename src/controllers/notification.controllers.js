@@ -19,7 +19,8 @@ const getNotifications = asyncHandler(async (req, res) => {
     .limit(parseInt(limit))
     .skip(parseInt(skip))
     .populate("projectId", "name")
-    .populate("taskId", "name");
+    .populate("taskId", "name")
+    .lean();
 
   const totalCount = await Notification.countDocuments(filter);
   const unreadCount = await Notification.countDocuments({

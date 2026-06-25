@@ -45,4 +45,7 @@ const projectNoteSchema = new Schema(
 
 projectNoteSchema.plugin(softDeletePlugin);
 
+projectNoteSchema.index({ project: 1 });
+projectNoteSchema.index({ createdBy: 1 });
+
 export const ProjectNote = mongoose.model("ProjectNote", projectNoteSchema);

@@ -26,7 +26,7 @@ async function getMemberRole(userId, projectId) {
 const getNotes = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const project = await Project.findById(projectId);
+  const project = await Project.findById(projectId).lean();
   if (!project) {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
@@ -36,7 +36,8 @@ const getNotes = asyncHandler(async (req, res) => {
   })
     .populate("createdBy", "username fullname avatar")
     .populate("updatedBy", "username fullname avatar")
-    .sort({ isPinned: -1, createdAt: -1 }); // pinned first, then newest
+    .sort({ isPinned: -1, createdAt: -1 })
+    .lean(); // pinned first, then newest
 
   return res
     .status(200)
@@ -51,7 +52,8 @@ const getNoteById = asyncHandler(async (req, res) => {
 
   const note = await ProjectNote.findById(noteId)
     .populate("createdBy", "username fullname avatar")
-    .populate("updatedBy", "username fullname avatar");
+    .populate("updatedBy", "username fullname avatar")
+    .lean();
 
   if (!note) {
     return res.status(404).json(new ApiError(404, "Note not found"));

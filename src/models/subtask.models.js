@@ -35,4 +35,7 @@ const subtaskSchema = new Schema(
 
 subtaskSchema.plugin(softDeletePlugin);
 
+subtaskSchema.index({ task: 1 });
+subtaskSchema.index({ project: 1 });
+
 export const ProjectSubTask = mongoose.model("SubTask", subtaskSchema);

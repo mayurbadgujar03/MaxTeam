@@ -30,4 +30,6 @@ const projectSchema = new Schema(
 
 projectSchema.plugin(softDeletePlugin);
 
+projectSchema.index({ createdBy: 1 });
+
 export const Project = mongoose.model("Project", projectSchema);

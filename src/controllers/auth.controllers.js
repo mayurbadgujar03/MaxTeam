@@ -258,9 +258,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     return res.status(401).json(new ApiError(401, "Not authenticated"));
   }
 
-  const user = await User.findById(req.user._id).select(
-    "-password -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry",
-  );
+  const user = await User.findById(req.user._id)
+    .select(
+      "-password -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry",
+    )
+    .lean();
 
   if (!user) {
     return res.status(401).json(new ApiError(401, "User not found"));
