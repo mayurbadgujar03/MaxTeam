@@ -42,6 +42,48 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+/**
+ * Sanitizes embed URLs for Canva and Overleaf.
+ * - Canva HTML blob: extracts the src URL from pasted <iframe> markup.
+ * - Canva shortlink (canva.link): returns 'INVALID_SHORTLINK' — CORS blocks resolution.
+ * - Canva standard/edit link: strips query params, forces /view?embed format.
+ * - Overleaf: passes through unchanged (fully iframe-friendly).
+ */
+const sanitizeEmbedUrl = (url, type) => {
+  if (!url) return null;
+  const cleanUrl = url.trim();
+
+  if (type === 'canva') {
+    // Scenario 1: They pasted the entire HTML embed blob
+    if (cleanUrl.includes('<iframe')) {
+      const match = cleanUrl.match(/src="([^"]+)"/);
+      if (match && match[1]) return match[1];
+    }
+
+    // Scenario 2: They pasted the blocked shortlink
+    if (cleanUrl.includes('canva.link')) {
+      return 'INVALID_SHORTLINK';
+    }
+
+    // Scenario 3: Standard View or Edit link
+    if (cleanUrl.includes('canva.com/design')) {
+      const baseUrl = cleanUrl.split('?')[0]; // Strip existing tracking parameters
+
+      // Force it into the proper embed format
+      if (baseUrl.endsWith('/view') || baseUrl.endsWith('/edit')) {
+        return baseUrl.replace('/edit', '/view') + '?embed';
+      }
+      return baseUrl + '/view?embed'; // Fallback
+    }
+  }
+
+  if (type === 'overleaf') {
+    return cleanUrl; // Overleaf handles itself
+  }
+
+  return cleanUrl;
+};
+
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -401,21 +443,46 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="presentations" className="mt-6">
           {project?.canvaUrl ? (
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                <iframe
-                  src={
-                    project.canvaUrl.endsWith('/view')
-                      ? `${project.canvaUrl}?embed`
-                      : project.canvaUrl
-                  }
-                  title="Canva Presentation"
-                  className="w-full border-0 rounded-lg"
-                  style={{ height: '600px' }}
-                  allowFullScreen
-                />
-              </CardContent>
-            </Card>
+            sanitizeEmbedUrl(project.canvaUrl, 'canva') === 'INVALID_SHORTLINK' ? (
+              <Card className="border-destructive/30">
+                <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+                  <div className="rounded-full bg-destructive/10 p-4">
+                    <Presentation className="h-8 w-8 text-destructive" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-destructive">Shortlink Blocked by Canva</h3>
+                  <p className="text-sm text-muted-foreground text-center max-w-md">
+                    Canva does not allow shortlinks (<code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">canva.link</code>) in external apps.
+                    Please go to{" "}
+                    {canManageProject ? (
+                      <button
+                        onClick={() => setActiveTab("settings")}
+                        className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                      >
+                        Project Settings
+                      </button>
+                    ) : (
+                      <span className="font-medium">Project Settings</span>
+                    )}{" "}
+                    and paste the full "View Only" link instead.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    In Canva: <strong>Share → Collaboration Link → Anyone with the link: Can view</strong> → Copy the full URL.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <iframe
+                    src={sanitizeEmbedUrl(project.canvaUrl, 'canva')}
+                    title="Canva Presentation"
+                    className="w-full border-0 rounded-lg"
+                    style={{ height: '600px' }}
+                    allowFullScreen
+                  />
+                </CardContent>
+              </Card>
+            )
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
@@ -548,13 +615,14 @@ export default function ProjectDetailPage() {
                   </Label>
                   <Input
                     id="canva-url"
-                    type="url"
                     placeholder="https://www.canva.com/design/.../view"
                     value={projectCanvaUrl}
                     onChange={(e) => setProjectCanvaUrl(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Paste the shareable link from Canva. If the URL ends in <code className="font-mono">/view</code>, the embed parameter will be added automatically.
+                    Paste the full link from Canva (Share → Collaboration Link: Anyone with the link can view).
+                    You can also paste the full HTML embed code — the URL will be extracted automatically.
+                    <strong className="text-destructive"> Do not use shortlinks (canva.link).</strong>
                   </p>
                 </div>
 
