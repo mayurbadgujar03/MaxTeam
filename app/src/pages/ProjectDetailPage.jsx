@@ -245,7 +245,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in px-4 md:px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -266,33 +266,33 @@ export default function ProjectDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="tasks" className="gap-2">
+        <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden whitespace-nowrap flex-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <TabsTrigger value="tasks" className="gap-2 shrink-0">
             <CheckSquare className="h-4 w-4" />
             Task Board
           </TabsTrigger>
-          <TabsTrigger value="notes" className="gap-2">
+          <TabsTrigger value="notes" className="gap-2 shrink-0">
             <FileText className="h-4 w-4" />
             Project Notes
           </TabsTrigger>
-          <TabsTrigger value="presentations" className="gap-2">
+          <TabsTrigger value="presentations" className="gap-2 shrink-0">
             <Presentation className="h-4 w-4" />
             Presentations
           </TabsTrigger>
-          <TabsTrigger value="documentation" className="gap-2">
+          <TabsTrigger value="documentation" className="gap-2 shrink-0">
             <BookOpen className="h-4 w-4" />
             Documentation
           </TabsTrigger>
-          <TabsTrigger value="codetrack" className="gap-2">
+          <TabsTrigger value="codetrack" className="gap-2 shrink-0">
             <GitBranch className="h-4 w-4" />
             Code & Commits
           </TabsTrigger>
-          <TabsTrigger value="members" className="gap-2">
+          <TabsTrigger value="members" className="gap-2 shrink-0">
             <Users className="h-4 w-4" />
             Team Members
           </TabsTrigger>
           {canManageProject && (
-            <TabsTrigger value="settings" className="gap-2">
+            <TabsTrigger value="settings" className="gap-2 shrink-0">
               <Settings className="h-4 w-4" />
               Project Settings
             </TabsTrigger>
@@ -478,11 +478,11 @@ export default function ProjectDetailPage() {
               </Card>
             ) : (
               <Card className="overflow-hidden">
-                <CardContent className="p-0">
+                <CardContent className="p-0 w-full overflow-hidden">
                   <iframe
                     src={sanitizeEmbedUrl(project.canvaUrl, 'canva')}
                     title="Canva Presentation"
-                    className="w-full border-0 rounded-lg"
+                    className="w-full max-w-full border-0 rounded-lg"
                     style={{ height: '600px' }}
                     allowFullScreen
                   />
