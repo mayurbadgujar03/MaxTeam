@@ -39,6 +39,7 @@ import {
   Pin,
   Presentation,
   BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -151,6 +152,11 @@ export default function ProjectDetailPage() {
     mutationFn: () => {
       if (!projectName?.trim()) {
         throw new Error("Project name is required");
+      }
+      if (projectCanvaUrl && projectCanvaUrl.includes('canva.link')) {
+        throw new Error(
+          "Canva shortlinks are not allowed. Please use the Smart URL from the Embed menu."
+        );
       }
       return projectsApi.update(projectId, {
         name: projectName.trim(),
@@ -511,15 +517,26 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="documentation" className="mt-6">
           {project?.overleafUrl ? (
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                <iframe
-                  src={project.overleafUrl}
-                  title="Overleaf Documentation"
-                  className="w-full border-0 rounded-lg"
-                  style={{ height: '600px' }}
-                  allowFullScreen
-                />
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="rounded-full bg-primary/10 p-5">
+                  <BookOpen className="h-10 w-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">Overleaf Documentation</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  Your project documentation is hosted on Overleaf and will open securely in a new tab.
+                </p>
+                <Button asChild size="lg" className="mt-2 gap-2">
+                  <a
+                    href={project.overleafUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Open in Overleaf
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -541,7 +558,7 @@ export default function ProjectDetailPage() {
                   ) : (
                     <span className="font-medium">Project Settings</span>
                   )}{" "}
-                  to embed your document here.
+                  to link your document here.
                 </p>
               </CardContent>
             </Card>
@@ -620,7 +637,7 @@ export default function ProjectDetailPage() {
                     onChange={(e) => setProjectCanvaUrl(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Paste the full link from Canva (Share → Collaboration Link: Anyone with the link can view).
+                    In Canva: <strong>Share → Scroll down to Embed → Generate Embed URL → Copy the Smart URL.</strong>{" "}
                     You can also paste the full HTML embed code — the URL will be extracted automatically.
                     <strong className="text-destructive"> Do not use shortlinks (canva.link).</strong>
                   </p>
