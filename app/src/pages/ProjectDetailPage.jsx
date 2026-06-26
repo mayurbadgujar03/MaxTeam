@@ -37,6 +37,8 @@ import {
   GitBranch,
   Search,
   Pin,
+  Presentation,
+  BookOpen,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -61,6 +63,8 @@ export default function ProjectDetailPage() {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [projectGithubRepoUrl, setProjectGithubRepoUrl] = useState("");
+  const [projectCanvaUrl, setProjectCanvaUrl] = useState("");
+  const [projectOverleafUrl, setProjectOverleafUrl] = useState("");
 
   const {
     data: projectData,
@@ -110,6 +114,8 @@ export default function ProjectDetailPage() {
         name: projectName.trim(),
         description: projectDescription.trim(),
         githubRepoUrl: projectGithubRepoUrl.trim(),
+        canvaUrl: projectCanvaUrl.trim(),
+        overleafUrl: projectOverleafUrl.trim(),
       });
     },
     onSuccess: () => {
@@ -159,6 +165,8 @@ export default function ProjectDetailPage() {
       setProjectName(project.name);
       setProjectDescription(project.description || "");
       setProjectGithubRepoUrl(project.githubRepoUrl || "");
+      setProjectCanvaUrl(project.canvaUrl || "");
+      setProjectOverleafUrl(project.overleafUrl || "");
     }
   }, [project]);
 
@@ -213,26 +221,32 @@ export default function ProjectDetailPage() {
         <TabsList>
           <TabsTrigger value="tasks" className="gap-2">
             <CheckSquare className="h-4 w-4" />
-            Tasks
+            Task Board
           </TabsTrigger>
           <TabsTrigger value="notes" className="gap-2">
             <FileText className="h-4 w-4" />
-            Notes
+            Project Notes
+          </TabsTrigger>
+          <TabsTrigger value="presentations" className="gap-2">
+            <Presentation className="h-4 w-4" />
+            Presentations
+          </TabsTrigger>
+          <TabsTrigger value="documentation" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Documentation
+          </TabsTrigger>
+          <TabsTrigger value="codetrack" className="gap-2">
+            <GitBranch className="h-4 w-4" />
+            Code & Commits
           </TabsTrigger>
           <TabsTrigger value="members" className="gap-2">
             <Users className="h-4 w-4" />
-            Members
+            Team Members
           </TabsTrigger>
-          {canManageProject && project?.githubRepoUrl && (
-            <TabsTrigger value="codetrack" className="gap-2">
-              <GitBranch className="h-4 w-4" />
-              Code Track
-            </TabsTrigger>
-          )}
           {canManageProject && (
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              Settings
+              Project Settings
             </TabsTrigger>
           )}
         </TabsList>
@@ -297,11 +311,10 @@ export default function ProjectDetailPage() {
                   <button
                     key={cat}
                     onClick={() => setNoteCategory(cat)}
-                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
-                      noteCategory === cat
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${noteCategory === cat
                         ? 'bg-foreground text-background border-foreground'
                         : 'bg-transparent text-muted-foreground border-border hover:border-foreground/40'
-                    }`}
+                      }`}
                   >
                     {cat === 'all' ? 'All' : CATEGORY_CONFIG[cat].label}
                   </button>
@@ -386,6 +399,88 @@ export default function ProjectDetailPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="presentations" className="mt-6">
+          {project?.canvaUrl ? (
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <iframe
+                  src={
+                    project.canvaUrl.endsWith('/view')
+                      ? `${project.canvaUrl}?embed`
+                      : project.canvaUrl
+                  }
+                  title="Canva Presentation"
+                  className="w-full border-0 rounded-lg"
+                  style={{ height: '600px' }}
+                  allowFullScreen
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="rounded-full bg-muted p-4">
+                  <Presentation className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-medium">No Presentation Linked Yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  Add a Canva presentation URL in{" "}
+                  {canManageProject ? (
+                    <button
+                      onClick={() => setActiveTab("settings")}
+                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                    >
+                      Project Settings
+                    </button>
+                  ) : (
+                    <span className="font-medium">Project Settings</span>
+                  )}{" "}
+                  to embed your slides here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="documentation" className="mt-6">
+          {project?.overleafUrl ? (
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <iframe
+                  src={project.overleafUrl}
+                  title="Overleaf Documentation"
+                  className="w-full border-0 rounded-lg"
+                  style={{ height: '600px' }}
+                  allowFullScreen
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="rounded-full bg-muted p-4">
+                  <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-medium">No Documentation Linked Yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  Add an Overleaf read-only URL in{" "}
+                  {canManageProject ? (
+                    <button
+                      onClick={() => setActiveTab("settings")}
+                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                    >
+                      Project Settings
+                    </button>
+                  ) : (
+                    <span className="font-medium">Project Settings</span>
+                  )}{" "}
+                  to embed your document here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="members" className="mt-6">
           <Card>
             <CardContent className="pt-6">
@@ -445,6 +540,42 @@ export default function ProjectDetailPage() {
                   </p>
                 </div>
 
+                {/* Presentations – Canva URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="canva-url" className="flex items-center gap-2">
+                    <Presentation className="h-4 w-4 text-muted-foreground" />
+                    Canva Presentation URL
+                  </Label>
+                  <Input
+                    id="canva-url"
+                    type="url"
+                    placeholder="https://www.canva.com/design/.../view"
+                    value={projectCanvaUrl}
+                    onChange={(e) => setProjectCanvaUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Paste the shareable link from Canva. If the URL ends in <code className="font-mono">/view</code>, the embed parameter will be added automatically.
+                  </p>
+                </div>
+
+                {/* Documentation – Overleaf URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="overleaf-url" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    Overleaf Read-Only URL
+                  </Label>
+                  <Input
+                    id="overleaf-url"
+                    type="url"
+                    placeholder="https://www.overleaf.com/read/..."
+                    value={projectOverleafUrl}
+                    onChange={(e) => setProjectOverleafUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use the read-only sharing link from Overleaf so team members can view the document.
+                  </p>
+                </div>
+
                 <div className="flex items-center gap-4">
                   <Button
                     onClick={() => updateProjectMutation.mutate()}
@@ -497,12 +628,35 @@ export default function ProjectDetailPage() {
           </TabsContent>
         )}
 
-        {/* Code Track Tab – visible to admin & project_admin when githubRepoUrl is set */}
-        {canManageProject && project?.githubRepoUrl && (
-          <TabsContent value="codetrack" className="mt-6">
+        {/* Code Track Tab – always visible, shows empty state if no GitHub URL */}
+        <TabsContent value="codetrack" className="mt-6">
+          {project?.githubRepoUrl ? (
             <CodeTrackTab projectId={projectId} />
-          </TabsContent>
-        )}
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="rounded-full bg-muted p-4">
+                  <GitBranch className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-medium">No Repository Linked Yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  Add a GitHub repository URL in{" "}
+                  {canManageProject ? (
+                    <button
+                      onClick={() => setActiveTab("settings")}
+                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                    >
+                      Project Settings
+                    </button>
+                  ) : (
+                    <span className="font-medium">Project Settings</span>
+                  )}{" "}
+                  to track commits and code contributions.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
 
       <CreateTaskModal

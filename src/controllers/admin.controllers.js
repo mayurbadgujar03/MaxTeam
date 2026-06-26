@@ -9,7 +9,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
   const totalUsers = await User.countDocuments();
   const activeProjects = await Project.countDocuments();
   const totalFeedback = await Feedback.countDocuments();
-  
+
   const recentFeedback = await Feedback.find()
     .sort({ createdAt: -1 })
     .limit(10)

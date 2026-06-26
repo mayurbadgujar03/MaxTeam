@@ -22,6 +22,16 @@ const projectSchema = new Schema(
       default: "",
       trim: true,
     },
+    canvaUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    overleafUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

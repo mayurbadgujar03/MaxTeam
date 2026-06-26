@@ -141,7 +141,7 @@ const createProject = asyncHandler(async (req, res) => {
 
 const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const { name, description, githubRepoUrl } = req.body;
+  const { name, description, githubRepoUrl, canvaUrl, overleafUrl } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -156,6 +156,12 @@ const updateProject = asyncHandler(async (req, res) => {
   const updatePayload = { name, description };
   if (githubRepoUrl !== undefined) {
     updatePayload.githubRepoUrl = githubRepoUrl;
+  }
+  if (canvaUrl !== undefined) {
+    updatePayload.canvaUrl = canvaUrl;
+  }
+  if (overleafUrl !== undefined) {
+    updatePayload.overleafUrl = overleafUrl;
   }
 
   const project = await Project.findByIdAndUpdate(
