@@ -83,9 +83,9 @@ function MemberCommitTab({ member, commits }) {
     : member.username?.charAt(0).toUpperCase() || 'U';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Member header card */}
-      <div className="flex items-center gap-4 p-4 rounded-xl border bg-card">
+      <div className="flex items-center gap-4 p-3 sm:p-4 md:p-6 rounded-xl border bg-card w-full">
         <Avatar className="h-12 w-12">
           <AvatarImage src={member.avatar?.url} alt={member.fullname || member.username} className="object-cover" />
           <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
@@ -176,8 +176,8 @@ export function CodeTrackTab({ projectId }) {
   // ── Error state ─────────────────────────────────────────────────────────
   if (isError) {
     return (
-      <Card className="border-destructive/40">
-        <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+      <Card className="border-destructive/40 w-full">
+        <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-12 gap-4">
           <AlertCircle className="h-10 w-10 text-destructive/70" />
           <div className="text-center">
             <p className="font-semibold">Could not load commits</p>
@@ -197,8 +197,8 @@ export function CodeTrackTab({ projectId }) {
   // ── No members with github usernames ────────────────────────────────────
   if (memberSummary.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-14 gap-3">
+      <Card className="border-dashed w-full">
+        <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-14 sm:py-14 gap-3">
           <Users className="h-10 w-10 text-muted-foreground/40" />
           <div className="text-center">
             <p className="font-semibold">No GitHub usernames configured</p>
@@ -213,11 +213,11 @@ export function CodeTrackTab({ projectId }) {
 
   // ── Main view ───────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Header row */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
             <GitBranch className="h-5 w-5 text-muted-foreground" />
             Code Track
           </h2>

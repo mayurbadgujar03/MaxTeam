@@ -225,7 +225,7 @@ export default function ProjectDetailPage() {
 
   if (isProjectLoading) {
     return (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in px-3 py-4 md:px-6 lg:px-8">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-96 w-full" />
@@ -245,7 +245,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in px-4 md:px-6 lg:px-8">
+    <div className="space-y-6 animate-fade-in px-3 py-4 md:px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -255,7 +255,7 @@ export default function ProjectDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold">{project.name}</h1>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold">{project.name}</h1>
           <p className="text-sm text-muted-foreground">
             Created{" "}
             {formatDistanceToNow(new Date(project.createdAt), {
@@ -450,8 +450,8 @@ export default function ProjectDetailPage() {
         <TabsContent value="presentations" className="mt-6">
           {project?.canvaUrl ? (
             sanitizeEmbedUrl(project.canvaUrl, 'canva') === 'INVALID_SHORTLINK' ? (
-              <Card className="border-destructive/30">
-                <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+              <Card className="border-destructive/30 w-full">
+                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
                   <div className="rounded-full bg-destructive/10 p-4">
                     <Presentation className="h-8 w-8 text-destructive" />
                   </div>
@@ -477,7 +477,7 @@ export default function ProjectDetailPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden w-full">
                 <CardContent className="p-0 w-full overflow-hidden">
                   <iframe
                     src={sanitizeEmbedUrl(project.canvaUrl, 'canva')}
@@ -490,8 +490,8 @@ export default function ProjectDetailPage() {
               </Card>
             )
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+            <Card className="w-full">
+              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
                 <div className="rounded-full bg-muted p-4">
                   <Presentation className="h-8 w-8 text-muted-foreground/50" />
                 </div>
@@ -517,12 +517,12 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="documentation" className="mt-6">
           {project?.overleafUrl ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-20 gap-4">
+            <Card className="w-full">
+              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-4">
                 <div className="rounded-full bg-primary/10 p-5">
                   <BookOpen className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">Overleaf Documentation</h3>
+                <h3 className="text-lg md:text-xl font-semibold">Overleaf Documentation</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-md">
                   Your project documentation is hosted on Overleaf and will open securely in a new tab.
                 </p>
@@ -540,8 +540,8 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+            <Card className="w-full">
+              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
                 <div className="rounded-full bg-muted p-4">
                   <BookOpen className="h-8 w-8 text-muted-foreground/50" />
                 </div>
@@ -566,8 +566,8 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="w-full">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <MembersList
                 projectId={projectId}
                 members={projectMembers}
@@ -580,14 +580,14 @@ export default function ProjectDetailPage() {
 
         {canManageProject && (
           <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Settings</CardTitle>
+            <Card className="w-full">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-xl md:text-2xl lg:text-3xl">Project Settings</CardTitle>
                 <CardDescription>
                   Update your project details or delete the project.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="p-3 sm:p-4 md:p-6 space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="project-name">Project Name</Label>
                   <Input
@@ -678,7 +678,7 @@ export default function ProjectDetailPage() {
 
                 {/* Danger Zone — only the Mentor (admin) can delete the project */}
                 {isAdmin && (
-                  <div className="border-t pt-6">
+                  <div className="border-t pt-4 sm:pt-6">
                     <h4 className="mb-2 font-medium text-destructive">
                       Danger Zone
                     </h4>
@@ -718,8 +718,8 @@ export default function ProjectDetailPage() {
           {project?.githubRepoUrl ? (
             <CodeTrackTab projectId={projectId} />
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+            <Card className="w-full">
+              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
                 <div className="rounded-full bg-muted p-4">
                   <GitBranch className="h-8 w-8 text-muted-foreground/50" />
                 </div>
