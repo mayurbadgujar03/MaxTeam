@@ -85,6 +85,26 @@ const sanitizeEmbedUrl = (url, type) => {
   return cleanUrl;
 };
 
+const parseDocumentUrl = (url) => {
+  if (!url) return { type: 'empty', url: null };
+  const cleanUrl = url.trim();
+
+  // Scenario 1: Google Drive File (PDF/Image) or Google Doc/Sheet/Slide
+  if (cleanUrl.includes('drive.google.com/file/d/') || cleanUrl.includes('docs.google.com')) {
+    // Strip anything after /view or /edit and append /preview for iframe compatibility
+    const baseUrl = cleanUrl.split('/view')[0].split('/edit')[0];
+    return { type: 'embed', url: `${baseUrl}/preview` };
+  }
+
+  // Scenario 2: Overleaf (Blocked by CSP)
+  if (cleanUrl.includes('overleaf.com')) {
+    return { type: 'portal', url: cleanUrl, portalName: 'Overleaf Documentation' };
+  }
+
+  // Scenario 3: Catch-all for Notion, OneDrive, Dropbox, etc.
+  return { type: 'portal', url: cleanUrl, portalName: 'External Document' };
+};
+
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -518,53 +538,77 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="documentation" className="mt-6">
-          {project?.overleafUrl ? (
-            <Card className="w-full">
-              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-4">
-                <div className="rounded-full bg-primary/10 p-5">
-                  <BookOpen className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold">Overleaf Documentation</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  Your project documentation is hosted on Overleaf and will open securely in a new tab.
-                </p>
-                <Button asChild size="lg" className="mt-2 gap-2">
-                  <a
-                    href={project.overleafUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    Open in Overleaf
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="w-full">
-              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
-                <div className="rounded-full bg-muted p-4">
-                  <BookOpen className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-                <h3 className="text-lg font-medium">No Documentation Linked Yet</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  Add an Overleaf read-only URL in{" "}
-                  {canManageProject ? (
-                    <button
-                      onClick={() => setActiveTab("settings")}
-                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+          {(() => {
+            const doc = parseDocumentUrl(project?.overleafUrl);
+            if (doc.type === 'empty') {
+              return (
+                <Card className="w-full">
+                  <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
+                    <div className="rounded-full bg-muted p-4">
+                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <h3 className="text-lg font-medium">No Documentation Linked Yet</h3>
+                    <p className="text-sm text-muted-foreground text-center max-w-md">
+                      Add an Overleaf read-only URL in{" "}
+                      {canManageProject ? (
+                        <button
+                          onClick={() => setActiveTab("settings")}
+                          className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                        >
+                          Project Settings
+                        </button>
+                      ) : (
+                        <span className="font-medium">Project Settings</span>
+                      )}{" "}
+                      to link your document here.
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            if (doc.type === 'embed') {
+              return (
+                <Card className="overflow-hidden w-full">
+                  <CardContent className="p-0 w-full overflow-hidden">
+                    <iframe
+                      src={doc.url}
+                      title="Project Documentation"
+                      className="w-full max-w-full border-0 rounded-lg"
+                      style={{ height: '600px' }}
+                      allowFullScreen
+                    />
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // doc.type === 'portal'
+            return (
+              <Card className="w-full">
+                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-4">
+                  <div className="rounded-full bg-primary/10 p-5">
+                    <BookOpen className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-semibold">{doc.portalName}</h3>
+                  <p className="text-sm text-muted-foreground text-center max-w-md">
+                    Your project documentation is hosted externally and will open securely in a new tab.
+                  </p>
+                  <Button asChild size="lg" className="mt-2 gap-2">
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      Project Settings
-                    </button>
-                  ) : (
-                    <span className="font-medium">Project Settings</span>
-                  )}{" "}
-                  to link your document here.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                      <BookOpen className="h-4 w-4" />
+                      Open {doc.portalName === 'Overleaf Documentation' ? 'Overleaf' : 'Document'}
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">
@@ -645,21 +689,21 @@ export default function ProjectDetailPage() {
                   </p>
                 </div>
 
-                {/* Documentation – Overleaf URL */}
+                {/* Documentation – URL */}
                 <div className="space-y-2">
                   <Label htmlFor="overleaf-url" className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    Overleaf Read-Only URL
+                    Project Report / Documentation URL
                   </Label>
                   <Input
                     id="overleaf-url"
                     type="url"
-                    placeholder="https://www.overleaf.com/read/..."
+                    placeholder="https://drive.google.com/... or https://www.overleaf.com/read/..."
                     value={projectOverleafUrl}
                     onChange={(e) => setProjectOverleafUrl(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Use the read-only sharing link from Overleaf so team members can view the document.
+                    Paste a Google Drive link (PDF/Doc), Google Docs URL, or Overleaf link. Google links will be embedded directly.
                   </p>
                 </div>
 
