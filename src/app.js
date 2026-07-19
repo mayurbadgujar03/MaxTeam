@@ -14,6 +14,7 @@ import notification from "./routes/notification.routes.js";
 import publicRouter from "./routes/public.routes.js";
 import feedbackRouter from "./routes/feedback.routes.js";
 import adminRouter from "./routes/admin.routes.js";
+import intakeRouter from "./routes/intake.routes.js";
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
@@ -55,6 +56,7 @@ app.use("/api/v1/notifications", notification);
 app.use("/api/v1/public", publicRouter);
 app.use("/api/v1/feedback", feedbackRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/intake", intakeRouter);
 
 app.use("/api/public", publicRouter);
 app.use("/api/feedback", feedbackRouter);

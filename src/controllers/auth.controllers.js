@@ -2,6 +2,8 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
+import { PreInvitation } from "../models/preinvitation.models.js";
+import { ProjectMember } from "../models/projectmember.models.js";
 
 import jwt from "jsonwebtoken";
 
@@ -139,6 +141,18 @@ const googleCallback = asyncHandler(async (req, res) => {
         },
         isEmailVerified: true,
       });
+
+      // Activation Hook: Convert Ghost Account Invitations into real memberships
+      const pendingInvites = await PreInvitation.find({ email: user.email.toLowerCase() });
+      if (pendingInvites.length > 0) {
+        const memberPayloads = pendingInvites.map((invite) => ({
+          user: user._id,
+          project: invite.projectId,
+          role: invite.role,
+        }));
+        await ProjectMember.insertMany(memberPayloads);
+        await PreInvitation.deleteMany({ email: user.email.toLowerCase() });
+      }
     }
 
     // 4. Generate custom application JWTs
