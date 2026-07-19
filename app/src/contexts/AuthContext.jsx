@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
       try {
         const wsResponse = await workspaceApi.getMyWorkspaces();
+        console.log("DEBUG WS RESPONSE:", wsResponse);
         // Since getMyWorkspaces returns ApiResponse(200, workspaces, ...), the array is in response.data.data
         setWorkspaces(wsResponse.data.data || []);
       } catch (wsError) {
