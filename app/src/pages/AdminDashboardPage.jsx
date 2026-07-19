@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/api/admin';
+import { BatchManagementTab } from '@/components/admin/BatchManagementTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +19,11 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboardPage() {
+  const [activeTab, setActiveTab] = useState('feedback');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -114,162 +118,200 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 animate-fade-in p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          Super Admin Observability
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Monitor engine activities, users, project statistics, and process incoming feedback loops.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+            Super Admin Observability
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Monitor engine activities, users, project statistics, and process incoming feedback loops.
+          </p>
+        </div>
+
+        {/* Tab Selectors */}
+        <div className="flex rounded-lg bg-slate-100 dark:bg-slate-900 p-1 w-fit border border-slate-200 dark:border-slate-800">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "font-semibold text-xs transition-base rounded-md py-1.5 px-4",
+              activeTab === 'feedback'
+                ? "bg-background text-indigo-600 dark:text-indigo-400 shadow-sm hover:bg-background"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            )}
+            onClick={() => setActiveTab('feedback')}
+          >
+            Feedback Logs
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "font-semibold text-xs transition-base rounded-md py-1.5 px-4",
+              activeTab === 'batches'
+                ? "bg-background text-indigo-600 dark:text-indigo-400 shadow-sm hover:bg-background"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            )}
+            onClick={() => setActiveTab('batches')}
+          >
+            Batches & Intake Links
+          </Button>
+        </div>
       </div>
 
-      {/* Top Row: Metric Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Card 1: Total Users */}
-        <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Total Platform Users
-            </CardTitle>
-            <div className="rounded-lg p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <Users className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-              {stats.totalUsers ?? 0}
-            </div>
-            <p className="text-xs text-slate-400 mt-1">Registered accounts in database</p>
-          </CardContent>
-        </Card>
+      {activeTab === 'feedback' ? (
+        <>
+          {/* Top Row: Metric Cards */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Card 1: Total Users */}
+            <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Total Platform Users
+                </CardTitle>
+                <div className="rounded-lg p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <Users className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
+                  {stats.totalUsers ?? 0}
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Registered accounts in database</p>
+              </CardContent>
+            </Card>
 
-        {/* Card 2: Active Projects */}
-        <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Active Project Workspaces
-            </CardTitle>
-            <div className="rounded-lg p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <FolderKanban className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-              {stats.activeProjects ?? 0}
-            </div>
-            <p className="text-xs text-slate-400 mt-1">Kanban & Spec environments</p>
-          </CardContent>
-        </Card>
+            {/* Card 2: Active Projects */}
+            <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Active Project Workspaces
+                </CardTitle>
+                <div className="rounded-lg p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <FolderKanban className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
+                  {stats.activeProjects ?? 0}
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Kanban & Spec environments</p>
+              </CardContent>
+            </Card>
 
-        {/* Card 3: Total Feedback */}
-        <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Total Feedback Logs
-            </CardTitle>
-            <div className="rounded-lg p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-              {stats.totalFeedback ?? 0}
-            </div>
-            <p className="text-xs text-slate-400 mt-1">User suggestions & reports</p>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Card 3: Total Feedback */}
+            <Card className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Total Feedback Logs
+                </CardTitle>
+                <div className="rounded-lg p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900 dark:text-slate-50">
+                  {stats.totalFeedback ?? 0}
+                </div>
+                <p className="text-xs text-slate-400 mt-1">User suggestions & reports</p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Main Content Split: Feedback Logs */}
-      <Card className="border border-slate-200 dark:border-slate-800 bg-card shadow-card">
-        <CardHeader className="border-b border-slate-200 dark:border-slate-800 py-5">
-          <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-50">
-            Recent Feedback Feed
-          </CardTitle>
-          <CardDescription className="text-slate-500 dark:text-slate-400">
-            Incoming suggestions and bug reports sorted by creation date.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {feedbackList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-3">
-              <MessageSquare className="h-10 w-10 text-slate-300" />
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No feedback logs found</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200 dark:divide-slate-800">
-              {feedbackList.map((item) => {
-                const isResolving = resolveMutation.isPending && resolveMutation.variables === item._id;
-                
-                return (
-                  <div key={item._id} className="p-6 transition-base hover:bg-slate-50/50 dark:hover:bg-slate-900/10 flex flex-col md:flex-row md:items-start justify-between gap-6">
-                    <div className="space-y-3 flex-1">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <Badge variant="outline" className={getFeedbackTypeStyles(item.type)}>
-                          {item.type}
-                        </Badge>
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(item.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal whitespace-pre-line">
-                        {item.message}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {item.user ? (
-                          <>
-                            <span className="flex items-center gap-1">
-                              <UserIcon className="h-3.5 w-3.5 text-slate-400" />
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">{item.user.fullname}</span> ({item.user.username})
+          {/* Main Content Split: Feedback Logs */}
+          <Card className="border border-slate-200 dark:border-slate-800 bg-card shadow-card">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-800 py-5">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-50">
+                Recent Feedback Feed
+              </CardTitle>
+              <CardDescription className="text-slate-500 dark:text-slate-400">
+                Incoming suggestions and bug reports sorted by creation date.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {feedbackList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-3">
+                  <MessageSquare className="h-10 w-10 text-slate-300" />
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No feedback logs found</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {feedbackList.map((item) => {
+                    const isResolving = resolveMutation.isPending && resolveMutation.variables === item._id;
+                    
+                    return (
+                      <div key={item._id} className="p-6 transition-base hover:bg-slate-50/50 dark:hover:bg-slate-900/10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+                        <div className="space-y-3 flex-1">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <Badge variant="outline" className={getFeedbackTypeStyles(item.type)}>
+                              {item.type}
+                            </Badge>
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(item.createdAt).toLocaleString()}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3.5 w-3.5 text-slate-400" />
-                              {item.user.email}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="font-semibold text-slate-400 italic">Anonymous Reporter</span>
-                        )}
-                      </div>
-                    </div>
+                          </div>
+                          
+                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal whitespace-pre-line">
+                            {item.message}
+                          </p>
 
-                    <div className="flex items-center self-start shrink-0">
-                      {item.status === 'resolved' ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 gap-1.5 py-1 px-3.5 rounded-full font-semibold">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          Resolved
-                        </Badge>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 py-1 px-3.5 rounded-full font-semibold gap-1">
-                            <Clock className="h-3 w-3" />
-                            Pending
-                          </Badge>
-                          <Button
-                            size="sm"
-                            disabled={isResolving}
-                            onClick={() => resolveMutation.mutate(item._id)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs transition-base h-8"
-                          >
-                            {isResolving ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {item.user ? (
+                              <>
+                                <span className="flex items-center gap-1">
+                                  <UserIcon className="h-3.5 w-3.5 text-slate-400" />
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300">{item.user.fullname}</span> ({item.user.username})
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3.5 w-3.5 text-slate-400" />
+                                  {item.user.email}
+                                </span>
+                              </>
                             ) : (
-                              'Mark Resolved'
+                              <span className="font-semibold text-slate-400 italic">Anonymous Reporter</span>
                             )}
-                          </Button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                        <div className="flex items-center self-start shrink-0">
+                          {item.status === 'resolved' ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 gap-1.5 py-1 px-3.5 rounded-full font-semibold">
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              Resolved
+                            </Badge>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 py-1 px-3.5 rounded-full font-semibold gap-1">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </Badge>
+                              <Button
+                                size="sm"
+                                disabled={isResolving}
+                                onClick={() => resolveMutation.mutate(item._id)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs transition-base h-8"
+                              >
+                                {isResolving ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  'Mark Resolved'
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <BatchManagementTab />
+      )}
     </div>
   );
 }
