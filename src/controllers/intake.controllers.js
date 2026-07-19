@@ -6,14 +6,16 @@ import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { PreInvitation } from "../models/preinvitation.models.js";
+import { sendEmail, ghostInvitationMailgenContent } from "../utils/mail.js";
+import { InstitutionWorkspace } from "../models/workspace.models.js";
 
 const processBatchIntake = asyncHandler(async (req, res) => {
-  const { name, description, leaderEmail, memberEmails, mentorId, workspaceId, batchId } = req.body;
+  const { name, description, leader, members, mentorId, workspaceId, batchId } = req.body;
 
-  if (!name || !description || !leaderEmail || !mentorId) {
+  if (!name || !description || !leader || !leader.email || !mentorId) {
     return res
       .status(400)
-      .json(new ApiError(400, "name, description, leaderEmail, and mentorId are required"));
+      .json(new ApiError(400, "name, description, leader (with email), and mentorId are required"));
   }
 
   const project = await Project.create({
@@ -30,14 +32,30 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     role: UserRolesEnum.ADMIN,
   });
 
-  const emailsToProcess = [
-    { email: leaderEmail, role: UserRolesEnum.PROJECT_ADMIN },
-    ...(memberEmails || []).map((email) => ({ email, role: UserRolesEnum.MEMBER })),
+  const inviterName = req.user?.fullname || "A Coordinator";
+  let instituteName = "Your Institution";
+  if (workspaceId) {
+    const workspace = await InstitutionWorkspace.findById(workspaceId);
+    if (workspace) instituteName = workspace.name;
+  }
+
+  const membersToProcess = [
+    { name: leader.name, email: leader.email, role: UserRolesEnum.PROJECT_ADMIN },
+    ...(members || []).map((m) => ({ name: m.name, email: m.email, role: UserRolesEnum.MEMBER })),
   ];
 
   const results = { assigned: [], ghosted: [] };
+  const onboardingUrl = `${process.env.CORS_ORIGIN || "http://localhost:5173"}/login`;
 
-  for (const entry of emailsToProcess) {
+  const formatName = (email) =>
+    email
+      .split("@")[0]
+      .split(".")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  for (const entry of membersToProcess) {
+    if (!entry.email) continue;
     const normalizedEmail = entry.email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -64,6 +82,21 @@ const processBatchIntake = asyncHandler(async (req, res) => {
         role: entry.role,
         workspaceId: workspaceId || undefined,
       });
+
+      const actualName = entry.name || formatName(entry.email);
+      const mailContent = ghostInvitationMailgenContent(
+        actualName,
+        inviterName,
+        instituteName,
+        project.name,
+        onboardingUrl,
+      );
+
+      sendEmail({
+        email: normalizedEmail,
+        subject: `You've been invited to ${project.name} on Xugi`,
+        mailgenContent: mailContent,
+      }).catch((err) => console.error("Ghost Invite Email Failed:", err));
 
       results.ghosted.push(normalizedEmail);
     }

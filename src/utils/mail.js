@@ -77,8 +77,33 @@ const forgotPasswordRequestMailgenContent = (
   };
 };
 
+const ghostInvitationMailgenContent = (
+  inviteeName,
+  inviterName,
+  instituteName,
+  projectName,
+  onboardingUrl
+) => {
+  return {
+    body: {
+      name: inviteeName,
+      intro: `${inviterName} from **${instituteName}** has invited you to collaborate on the project **${projectName}** on Xugi.`,
+      action: {
+        instructions: "To access your workspace and project files, activate your account below:",
+        button: {
+          color: "#0F172A",
+          text: "Activate My Account",
+          link: onboardingUrl,
+        },
+      },
+      outro: "Need help? Reply to this email, we'd love to help.",
+    },
+  };
+};
+
 export {
   emailVerificationMailgenContent,
   sendEmail,
   forgotPasswordRequestMailgenContent,
+  ghostInvitationMailgenContent,
 };
