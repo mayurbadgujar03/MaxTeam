@@ -1,7 +1,9 @@
 import { asyncHandler } from "../utils/async-handler.js";
+import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { User } from "../models/user.models.js";
 
 const getMyWorkspaces = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -52,4 +54,48 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, workspaces, "Workspaces fetched successfully"));
 });
 
-export { getMyWorkspaces };
+const addWorkspaceHod = asyncHandler(async (req, res) => {
+  const { workspaceId } = req.params;
+  const { email } = req.body;
+
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  // Verify workspace exists
+  const workspace = await InstitutionWorkspace.findById(workspaceId);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace not found");
+  }
+
+  // Only an existing HOD on this workspace can invite others
+  const callerIsHod = workspace.authorizedHods.some(
+    (hodId) => hodId.toString() === req.user._id.toString(),
+  );
+  if (!callerIsHod) {
+    throw new ApiError(403, "Only authorized HODs can invite other HODs to this workspace");
+  }
+
+  // Find the user to invite
+  const invitee = await User.findOne({ email: email.toLowerCase().trim() });
+  if (!invitee) {
+    throw new ApiError(404, "No user found with that email address");
+  }
+
+  // $addToSet prevents duplicates automatically
+  await InstitutionWorkspace.findByIdAndUpdate(workspaceId, {
+    $addToSet: { authorizedHods: invitee._id },
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { inviteeId: invitee._id, inviteeName: invitee.fullname },
+        "HOD added to workspace successfully",
+      ),
+    );
+});
+
+export { getMyWorkspaces, addWorkspaceHod };

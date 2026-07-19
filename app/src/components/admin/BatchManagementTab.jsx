@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { batchesApi } from '@/api/batches';
+import { workspaceApi } from '@/api/workspace';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Plus, School, Library, Loader2, ClipboardCheck } from 'lucide-react';
+import { Copy, Plus, School, Library, Loader2, ClipboardCheck, UserPlus, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function BatchManagementTab() {
@@ -17,8 +18,10 @@ export function BatchManagementTab() {
   const queryClient = useQueryClient();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
   const isPersonal = activeWorkspace === 'PERSONAL';
@@ -58,6 +61,31 @@ export function BatchManagementTab() {
       department,
       workspaceId: activeWorkspace,
     });
+  };
+
+  const inviteMutation = useMutation({
+    mutationFn: ({ workspaceId, email }) => workspaceApi.addWorkspaceHod(workspaceId, email),
+    onSuccess: (data) => {
+      toast({
+        title: 'HOD Invited',
+        description: `${data?.data?.data?.inviteeName || 'User'} has been added as an HOD to this workspace.`,
+      });
+      setIsInviteOpen(false);
+      setInviteEmail('');
+    },
+    onError: (err) => {
+      toast({
+        title: 'Invitation Failed',
+        description: err?.response?.data?.message || err.message || 'Could not invite HOD.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleInviteHod = (e) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    inviteMutation.mutate({ workspaceId: activeWorkspace, email: inviteEmail });
   };
 
   const handleCopyLink = (batchId) => {
@@ -110,7 +138,62 @@ export function BatchManagementTab() {
           </p>
         </div>
         
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <div className="flex items-center gap-3">
+          {/* Invite HOD Dialog */}
+          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
+                <UserPlus className="h-4 w-4" />
+                Invite HOD
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Invite Co-Administrator</DialogTitle>
+                <DialogDescription>
+                  Grant another faculty member HOD-level access to this workspace.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleInviteHod} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hod-email">Faculty Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="hod-email"
+                      type="email"
+                      placeholder="e.g. professor@university.edu"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    The user must already have a registered account on the platform.
+                  </p>
+                </div>
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={inviteMutation.isPending || !inviteEmail.trim()} className="gap-2">
+                    {inviteMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4" />
+                        Send Invitation
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Create Batch Dialog */}
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />

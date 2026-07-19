@@ -1,4 +1,4 @@
-import { Home, FolderKanban, Settings, User, LogOut, Shield, Building } from 'lucide-react';
+import { Home, FolderKanban, Settings, User, LogOut, Shield, Building, Layers } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,6 +98,24 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
               </span>
             </NavLink>
           ))}
+
+          {activeWorkspace !== 'PERSONAL' && (
+            <NavLink
+              to="/batches"
+              className={cn(
+                'flex items-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent whitespace-nowrap'
+              )}
+              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                <Layers className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+              </div>
+              <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
+                Batches
+              </span>
+            </NavLink>
+          )}
 
           {user?.role === 'superadmin' && (
             <NavLink

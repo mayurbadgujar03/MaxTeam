@@ -19,6 +19,7 @@ import ProjectDetailPage from "./pages/ProjectDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import BatchesPage from "./pages/BatchesPage";
 
 const Router = typeof window !== 'undefined' && window.navigator.userAgent.toLowerCase().includes('electron')
   ? HashRouter
@@ -64,6 +65,7 @@ const App = () => (
                     <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/batches" element={<BatchesPage />} />
                   </Route>
 
                   <Route

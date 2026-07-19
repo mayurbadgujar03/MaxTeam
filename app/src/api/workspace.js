@@ -5,4 +5,9 @@ export const workspaceApi = {
     const response = await apiClient.get('/workspace/mine');
     return response;
   },
+
+  async addWorkspaceHod(workspaceId, email) {
+    const response = await apiClient.patch(`/workspace/${workspaceId}/hods`, { email });
+    return response;
+  },
 };
