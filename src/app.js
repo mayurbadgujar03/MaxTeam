@@ -15,6 +15,7 @@ import publicRouter from "./routes/public.routes.js";
 import feedbackRouter from "./routes/feedback.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import intakeRouter from "./routes/intake.routes.js";
+import workspaceRouter from "./routes/workspace.routes.js";
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
@@ -57,6 +58,7 @@ app.use("/api/v1/public", publicRouter);
 app.use("/api/v1/feedback", feedbackRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/intake", intakeRouter);
+app.use("/api/v1/workspace", workspaceRouter);
 
 app.use("/api/public", publicRouter);
 app.use("/api/feedback", feedbackRouter);

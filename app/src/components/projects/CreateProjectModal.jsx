@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { projectsApi } from '@/api/projects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +22,15 @@ export function CreateProjectModal({ open, onOpenChange }) {
   const [description, setDescription] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeWorkspace } = useAuth();
 
   const createMutation = useMutation({
-    mutationFn: () => projectsApi.create({ name, description }),
+    mutationFn: () =>
+      projectsApi.create({
+        name,
+        description,
+        workspaceId: activeWorkspace !== 'PERSONAL' ? activeWorkspace : null,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast({

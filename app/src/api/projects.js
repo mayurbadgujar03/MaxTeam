@@ -1,8 +1,9 @@
 import { apiClient } from '@/lib/api-client';
 
 export const projectsApi = {
-  async getAll() {
-    const response = await apiClient.get('/project');
+  async getAll(workspaceId) {
+    const url = workspaceId && workspaceId !== 'PERSONAL' ? `/project?workspaceId=${workspaceId}` : '/project';
+    const response = await apiClient.get(url);
     return response;
   },
 

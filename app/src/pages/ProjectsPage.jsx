@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { activeWorkspace } = useAuth();
 
   const queryClient = useQueryClient();
   const { socket } = useSocket();
@@ -29,7 +31,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     if (socket) {
       const handleNotification = () => {
-        queryClient.invalidateQueries(["projects"]);
+        queryClient.invalidateQueries(["projects", activeWorkspace]);
       };
 
       socket.on("notification_received", handleNotification);
@@ -38,11 +40,11 @@ export default function ProjectsPage() {
         socket.off("notification_received", handleNotification);
       };
     }
-  }, [socket, queryClient]);
+  }, [socket, queryClient, activeWorkspace]);
 
   const { data: projectsData, isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => projectsApi.getAll(),
+    queryKey: ['projects', activeWorkspace],
+    queryFn: () => projectsApi.getAll(activeWorkspace),
   });
 
   const projects = projectsData?.data || [];

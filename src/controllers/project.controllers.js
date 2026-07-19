@@ -27,7 +27,15 @@ const getProjects = asyncHandler(async (req, res) => {
 
   const projectIds = memberShips.map((m) => m.project);
 
-  const projects = await Project.find({ _id: { $in: projectIds } }).lean();
+  const { workspaceId } = req.query;
+  const filter = { _id: { $in: projectIds } };
+  if (workspaceId && workspaceId !== 'PERSONAL') {
+    filter.workspaceId = workspaceId;
+  } else {
+    filter.workspaceId = null;
+  }
+
+  const projects = await Project.find(filter).lean();
 
   // Fetch all members for these projects
   const allMembers = await ProjectMember.find({ project: { $in: projectIds } })

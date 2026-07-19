@@ -1,4 +1,4 @@
-import { Home, FolderKanban, Settings, User, LogOut, Shield } from 'lucide-react';
+import { Home, FolderKanban, Settings, User, LogOut, Shield, Building } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ const navigation = [
 ];
 
 export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
-  const { user, logout } = useAuth();
+  const { user, logout, activeWorkspace, setActiveWorkspace, workspaces } = useAuth();
 
   const initials = user?.fullname
     ? user.fullname
@@ -54,6 +54,29 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
             Flowbase
           </span>
         </Link>
+
+        {/* Workspace Switcher */}
+        <div className="px-3 py-3 border-b border-sidebar-border select-none whitespace-nowrap overflow-hidden">
+          <div className="flex items-center">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <Building className="h-5 w-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 ml-3">
+              <select
+                value={activeWorkspace}
+                onChange={(e) => setActiveWorkspace(e.target.value)}
+                className="w-full bg-transparent border-0 text-sm font-semibold focus:ring-0 focus:outline-none cursor-pointer truncate text-sidebar-foreground"
+              >
+                <option value="PERSONAL" className="bg-sidebar text-sidebar-foreground">Personal Workspace</option>
+                {workspaces.map((ws) => (
+                  <option key={ws._id} value={ws._id} className="bg-sidebar text-sidebar-foreground">
+                    {ws.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
         <nav className="flex-1 space-y-1 py-4">
           {navigation.map((item) => (

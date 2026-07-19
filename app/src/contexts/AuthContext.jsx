@@ -1,18 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '@/api/auth';
+import { workspaceApi } from '@/api/workspace';
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeWorkspace, setActiveWorkspace] = useState('PERSONAL');
+  const [workspaces, setWorkspaces] = useState([]);
 
   const refreshUser = useCallback(async () => {
     try {
       const response = await authApi.getCurrentUser();
       setUser(response.data.user);
+      try {
+        const wsResponse = await workspaceApi.getMyWorkspaces();
+        // Since getMyWorkspaces returns ApiResponse(200, workspaces, ...), the array is in response.data.data
+        setWorkspaces(wsResponse.data.data || []);
+      } catch (wsError) {
+        console.error("Failed to fetch workspaces:", wsError);
+        setWorkspaces([]);
+      }
     } catch (error) {
       setUser(null);
+      setWorkspaces([]);
       throw error;
     }
   }, []);
@@ -67,6 +79,9 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         logout,
         refreshUser,
+        activeWorkspace,
+        setActiveWorkspace,
+        workspaces,
       }}
     >
       {children}
