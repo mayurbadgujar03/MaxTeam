@@ -32,6 +32,15 @@ export const SystemRolesEnum = {
 
 export const AvailableSystemRoles = Object.values(SystemRolesEnum);
 
+export const PlanTypeEnum = {
+    FREE: "free",
+    INDIVIDUAL_PRO: "individual_pro",
+    INSTITUTE_LOCKED: "institute_locked",
+    INSTITUTE_PREMIUM: "institute_premium",
+};
+
+export const AvailablePlanTypes = Object.values(PlanTypeEnum);
+
 export const FeedbackTypeEnum = {
     BUG: "Bug",
     FEATURE: "Feature",
@@ -46,3 +55,21 @@ export const FeedbackStatusEnum = {
 };
 
 export const AvailableFeedbackStatuses = Object.values(FeedbackStatusEnum);
+
+export const DocumentFileTypeEnum = {
+    PDF: "pdf",
+    DOC: "doc",
+    DOCX: "docx",
+    PPT: "ppt",
+    PPTX: "pptx",
+};
+
+export const AvailableDocumentFileTypes = Object.values(DocumentFileTypeEnum);
+
+export const CommentEntityTypeEnum = {
+    TASK: "task",
+    REPORT: "report",
+    PRESENTATION: "presentation",
+};
+
+export const AvailableCommentEntityTypes = Object.values(CommentEntityTypeEnum);

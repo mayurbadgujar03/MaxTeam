@@ -1,12 +1,37 @@
 import mongoose, { Schema } from "mongoose";
 import { softDeletePlugin } from "../utils/softDeletePlugin.js";
+import { AvailableDocumentFileTypes } from "../utils/constants.js";
+
+const documentSubSchema = {
+  url: {
+    type: String,
+    default: null,
+  },
+  fileName: {
+    type: String,
+  },
+  fileType: {
+    type: String,
+    enum: AvailableDocumentFileTypes,
+  },
+  uploadedAt: {
+    type: Date,
+  },
+  uploadedBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
+};
 
 const projectSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     description: {
@@ -22,15 +47,23 @@ const projectSchema = new Schema(
       default: "",
       trim: true,
     },
-    canvaUrl: {
-      type: String,
-      default: "",
-      trim: true,
+    isFrozen: {
+      type: Boolean,
+      default: false,
     },
-    overleafUrl: {
-      type: String,
-      default: "",
-      trim: true,
+    workspaceId: {
+      type: Schema.Types.ObjectId,
+      ref: "InstitutionWorkspace",
+      default: null,
+    },
+    batchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Batch",
+      default: null,
+    },
+    documents: {
+      report: documentSubSchema,
+      presentation: documentSubSchema,
     },
   },
   {
@@ -41,5 +74,6 @@ const projectSchema = new Schema(
 projectSchema.plugin(softDeletePlugin);
 
 projectSchema.index({ createdBy: 1 });
+projectSchema.index({ workspaceId: 1, name: 1 }, { unique: true });
 
 export const Project = mongoose.model("Project", projectSchema);

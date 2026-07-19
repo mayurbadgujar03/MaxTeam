@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { AvailableSystemRoles, SystemRolesEnum } from "../utils/constants.js";
+import { AvailableSystemRoles, SystemRolesEnum, AvailablePlanTypes, PlanTypeEnum } from "../utils/constants.js";
 import { softDeletePlugin } from "../utils/softDeletePlugin.js";
 
 dotenv.config();
@@ -52,6 +52,19 @@ const userSchema = new Schema(
       type: String,
       enum: AvailableSystemRoles,
       default: SystemRolesEnum.USER,
+    },
+    planType: {
+      type: String,
+      enum: AvailablePlanTypes,
+      default: PlanTypeEnum.FREE,
+    },
+    planEndsAt: {
+      type: Date,
+      default: null,
+    },
+    activeProjectCount: {
+      type: Number,
+      default: 0,
     },
     refreshToken: {
       type: String,

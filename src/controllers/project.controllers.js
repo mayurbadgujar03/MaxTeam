@@ -91,7 +91,7 @@ const getProjectById = asyncHandler(async (req, res) => {
 
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { name, description } = req.body;
+  const { name, description, workspaceId, batchId } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -107,6 +107,8 @@ const createProject = asyncHandler(async (req, res) => {
     name,
     description,
     createdBy: user._id,
+    workspaceId: workspaceId || null,
+    batchId: batchId || null,
   });
 
   await ProjectMember.create({
@@ -141,7 +143,7 @@ const createProject = asyncHandler(async (req, res) => {
 
 const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const { name, description, githubRepoUrl, canvaUrl, overleafUrl } = req.body;
+  const { name, description, githubRepoUrl } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -156,12 +158,6 @@ const updateProject = asyncHandler(async (req, res) => {
   const updatePayload = { name, description };
   if (githubRepoUrl !== undefined) {
     updatePayload.githubRepoUrl = githubRepoUrl;
-  }
-  if (canvaUrl !== undefined) {
-    updatePayload.canvaUrl = canvaUrl;
-  }
-  if (overleafUrl !== undefined) {
-    updatePayload.overleafUrl = overleafUrl;
   }
 
   const project = await Project.findByIdAndUpdate(
@@ -228,11 +224,9 @@ const deleteProject = asyncHandler(async (req, res) => {
     }
   }
 
-  // ── Smart Delete: hard-delete empty projects, soft-delete populated ones ──
   const taskCount = await ProjectTask.countDocuments({ project: projectId });
 
   if (taskCount === 0) {
-    // No tasks — accidental/empty project, purge entirely from the database
     await Project.findByIdAndDelete(projectId);
     await ProjectMember.deleteMany({ project: projectId, deletedAt: { $exists: true } });
     await ProjectNote.deleteMany({ project: projectId, deletedAt: { $exists: true } });
@@ -422,7 +416,6 @@ const deleteMember = asyncHandler(async (req, res) => {
     }
   }
 
-  // Bust the Code Track cache — the member list has changed
   clearProjectCommitCache(projectId);
 
   return res
