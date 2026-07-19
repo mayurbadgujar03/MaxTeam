@@ -17,6 +17,7 @@ import adminRouter from "./routes/admin.routes.js";
 import intakeRouter from "./routes/intake.routes.js";
 import workspaceRouter from "./routes/workspace.routes.js";
 import batchRouter from "./routes/batch.routes.js";
+import commentRouter from "./routes/comment.routes.js";
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
@@ -61,6 +62,7 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/intake", intakeRouter);
 app.use("/api/v1/workspace", workspaceRouter);
 app.use("/api/v1/batch", batchRouter);
+app.use("/api/v1/comments", commentRouter);
 
 app.use("/api/public", publicRouter);
 app.use("/api/feedback", feedbackRouter);

@@ -23,6 +23,7 @@ import { CreateTaskModal } from "@/components/tasks/CreateTaskModal";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { NoteCard, CATEGORY_CONFIG } from "@/components/notes/NoteCard";
 import { MembersList } from "@/components/members/MembersList";
+import DocumentHubTab from "@/components/projects/DocumentHubTab";
 import { CodeTrackTab } from "@/components/projects/CodeTrackTab";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -538,77 +539,7 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="documentation" className="mt-6">
-          {(() => {
-            const doc = parseDocumentUrl(project?.overleafUrl);
-            if (doc.type === 'empty') {
-              return (
-                <Card className="w-full">
-                  <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
-                    <div className="rounded-full bg-muted p-4">
-                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
-                    </div>
-                    <h3 className="text-lg font-medium">No Documentation Linked Yet</h3>
-                    <p className="text-sm text-muted-foreground text-center max-w-md">
-                      Add an Overleaf read-only URL in{" "}
-                      {canManageProject ? (
-                        <button
-                          onClick={() => setActiveTab("settings")}
-                          className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                        >
-                          Project Settings
-                        </button>
-                      ) : (
-                        <span className="font-medium">Project Settings</span>
-                      )}{" "}
-                      to link your document here.
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            }
-
-            if (doc.type === 'embed') {
-              return (
-                <Card className="overflow-hidden w-full">
-                  <CardContent className="p-0 w-full overflow-hidden">
-                    <iframe
-                      src={doc.url}
-                      title="Project Documentation"
-                      className="w-full max-w-full border-0 rounded-lg"
-                      style={{ height: '600px' }}
-                      allowFullScreen
-                    />
-                  </CardContent>
-                </Card>
-              );
-            }
-
-            // doc.type === 'portal'
-            return (
-              <Card className="w-full">
-                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-4">
-                  <div className="rounded-full bg-primary/10 p-5">
-                    <BookOpen className="h-10 w-10 text-primary" />
-                  </div>
-                  <h3 className="text-lg md:text-xl font-semibold">{doc.portalName}</h3>
-                  <p className="text-sm text-muted-foreground text-center max-w-md">
-                    Your project documentation is hosted externally and will open securely in a new tab.
-                  </p>
-                  <Button asChild size="lg" className="mt-2 gap-2">
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      Open {doc.portalName === 'Overleaf Documentation' ? 'Overleaf' : 'Document'}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })()}
+          <DocumentHubTab project={project} canManageProject={canManageProject} />
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">

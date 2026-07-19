@@ -27,6 +27,10 @@ const commentSchema = new Schema(
       type: String,
       required: true,
     },
+    pageNumber: {
+      type: Number,
+      default: null,
+    },
     mentions: [
       {
         type: Schema.Types.ObjectId,
