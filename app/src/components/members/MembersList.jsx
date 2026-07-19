@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -273,7 +274,7 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false, 
             >
               <Avatar>
                 <AvatarImage
-                  src={member.user?.avatar?.url}
+                  src={getPremiumAvatarUrl(member.user?.avatar?.url, member.user?.fullname || member.user?.username)}
                   alt={member.user?.fullname || member.user?.username}
                   className="object-cover"
                 />

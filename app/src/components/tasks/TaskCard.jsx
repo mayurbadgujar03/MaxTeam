@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { Paperclip, MessageSquare, Trash2, Link as LinkIcon, Calendar as CalendarIcon, Clock, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
@@ -62,7 +63,7 @@ export function TaskCard({ task, onClick, onDelete, isDragging, canManageTasks =
             </div>
             {task.assignedTo && (
               <Avatar className="h-6 w-6">
-                <AvatarImage src={task.assignedTo.avatar?.url} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
+                <AvatarImage src={getPremiumAvatarUrl(task.assignedTo.avatar?.url, task.assignedTo.fullname || task.assignedTo.username)} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
                 <AvatarFallback className="text-xs">
                   {task.assignedTo.fullname
                     ? task.assignedTo.fullname

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/api/projects';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -87,7 +88,7 @@ function MemberCommitTab({ member, commits }) {
       {/* Member header card */}
       <div className="flex items-center gap-4 p-3 sm:p-4 md:p-6 rounded-xl border bg-card w-full">
         <Avatar className="h-12 w-12">
-          <AvatarImage src={member.avatar?.url} alt={member.fullname || member.username} className="object-cover" />
+          <AvatarImage src={getPremiumAvatarUrl(member.avatar?.url, member.fullname || member.username)} alt={member.fullname || member.username} className="object-cover" />
           <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
@@ -277,7 +278,7 @@ export function CodeTrackTab({ projectId }) {
                 className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 <Avatar className="h-5 w-5">
-                  <AvatarImage src={member.avatar?.url} alt={member.username} className="object-cover" />
+                  <AvatarImage src={getPremiumAvatarUrl(member.avatar?.url, member.fullname || member.username)} alt={member.username} className="object-cover" />
                   <AvatarFallback className="text-[9px] font-bold">{initials}</AvatarFallback>
                 </Avatar>
                 <span className="truncate max-w-[100px]">{member.fullname || member.username}</span>

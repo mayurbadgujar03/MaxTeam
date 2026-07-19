@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { Pin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +90,7 @@ export function NoteCard({ note, isSelected, onClick }) {
       {/* Footer */}
       <div className="flex items-center gap-2 mt-1">
         <Avatar className="h-5 w-5">
-          <AvatarImage src={author?.avatar?.url} alt={author?.fullname} className="object-cover" />
+          <AvatarImage src={getPremiumAvatarUrl(author?.avatar?.url, author?.fullname || author?.username)} alt={author?.fullname} className="object-cover" />
           <AvatarFallback className="text-[9px]">
             {getInitials(author?.fullname, author?.username)}
           </AvatarFallback>

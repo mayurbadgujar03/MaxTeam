@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -121,7 +122,7 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
           <div className="mb-3 flex items-center px-3 whitespace-nowrap">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+                <AvatarImage src={getPremiumAvatarUrl(user?.avatar?.url, user?.fullname || user?.username)} alt={user?.fullname || user?.username} className="object-cover" />
                 <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
                   {initials}
                 </AvatarFallback>

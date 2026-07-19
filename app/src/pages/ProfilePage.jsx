@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import { User, Mail } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -24,7 +25,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+              <AvatarImage src={getPremiumAvatarUrl(user?.avatar?.url, user?.fullname || user?.username)} alt={user?.fullname || user?.username} className="object-cover" />
               <AvatarFallback className="text-2xl font-semibold">
                 {user?.fullname
                   ? user.fullname

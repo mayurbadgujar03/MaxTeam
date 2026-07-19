@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 
 export function Topbar({ title, onMenuClick }) {
   const { user } = useAuth();
@@ -47,7 +48,7 @@ export function Topbar({ title, onMenuClick }) {
         <NotificationsPanel />
 
         <Avatar className="h-9 w-9">
-          <AvatarImage src={user?.avatar?.url} alt={user?.fullname || user?.username} className="object-cover" />
+          <AvatarImage src={getPremiumAvatarUrl(user?.avatar?.url, user?.fullname || user?.username)} alt={user?.fullname || user?.username} className="object-cover" />
           <AvatarFallback className="text-sm font-medium text-muted-foreground bg-muted">
             {initials}
           </AvatarFallback>

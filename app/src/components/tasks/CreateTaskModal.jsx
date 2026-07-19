@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import {
   Dialog,
   DialogContent,
@@ -171,7 +172,7 @@ export function CreateTaskModal({
                     {assignedTo ? (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={members.find(m => m.user?._id === assignedTo)?.user?.avatar?.url} alt={members.find(m => m.user?._id === assignedTo)?.user?.fullname || members.find(m => m.user?._id === assignedTo)?.user?.username} className="object-cover" />
+                          <AvatarImage src={getPremiumAvatarUrl(members.find(m => m.user?._id === assignedTo)?.user?.avatar?.url, members.find(m => m.user?._id === assignedTo)?.user?.fullname || members.find(m => m.user?._id === assignedTo)?.user?.username)} alt={members.find(m => m.user?._id === assignedTo)?.user?.fullname || members.find(m => m.user?._id === assignedTo)?.user?.username} className="object-cover" />
                           <AvatarFallback className="text-xs">
                             {(() => {
                               const foundUser = members.find(m => m.user?._id === assignedTo)?.user;
@@ -236,7 +237,7 @@ export function CreateTaskModal({
                               )}
                             />
                             <Avatar className="mr-2 h-6 w-6">
-                              <AvatarImage src={member.user?.avatar?.url} alt={member.user?.fullname || member.user?.username} className="object-cover" />
+                              <AvatarImage src={getPremiumAvatarUrl(member.user?.avatar?.url, member.user?.fullname || member.user?.username)} alt={member.user?.fullname || member.user?.username} className="object-cover" />
                               <AvatarFallback className="text-xs">
                                 {member.user?.fullname
                                   ? member.user.fullname

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getPremiumAvatarUrl } from '@/utils/avatar';
 import {
   Sheet,
   SheetContent,
@@ -304,7 +305,7 @@ export function TaskDetailModal({ task, projectId, open, onOpenChange, canManage
               <Label>Assigned to</Label>
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={task.assignedTo.avatar?.url} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
+                  <AvatarImage src={getPremiumAvatarUrl(task.assignedTo.avatar?.url, task.assignedTo.fullname || task.assignedTo.username)} alt={task.assignedTo.fullname || task.assignedTo.username} className="object-cover" />
                   <AvatarFallback className="text-xs">
                     {task.assignedTo.fullname
                       ? task.assignedTo.fullname
