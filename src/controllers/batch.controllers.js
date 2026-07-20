@@ -39,4 +39,41 @@ const getWorkspaceBatches = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, batches, "Batches fetched successfully"));
 });
 
-export { createBatch, getWorkspaceBatches };
+const getPublicBatchDetails = asyncHandler(async (req, res) => {
+  const { batchId } = req.params;
+
+  if (!batchId) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "batchId is required"));
+  }
+
+  const batch = await Batch.findById(batchId)
+    .populate("workspaceId", "name")
+    .populate("coordinators", "_id fullname")
+    .lean();
+
+  if (!batch) {
+    return res
+      .status(404)
+      .json(new ApiError(404, "Batch not found"));
+  }
+
+  const publicData = {
+    _id: batch._id,
+    name: batch.name,
+    department: batch.department,
+    workspaceName: batch.workspaceId?.name || "Unknown Institution",
+    workspaceId: batch.workspaceId?._id || null,
+    coordinators: (batch.coordinators || []).map((c) => ({
+      _id: c._id,
+      fullname: c.fullname,
+    })),
+  };
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, publicData, "Batch details fetched successfully"));
+});
+
+export { createBatch, getWorkspaceBatches, getPublicBatchDetails };

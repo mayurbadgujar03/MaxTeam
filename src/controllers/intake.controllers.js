@@ -6,33 +6,54 @@ import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { PreInvitation } from "../models/preinvitation.models.js";
+import { Batch } from "../models/batch.models.js";
 import { sendEmail, ghostInvitationMailgenContent } from "../utils/mail.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 
 const processBatchIntake = asyncHandler(async (req, res) => {
   const { name, description, leader, members, mentorId, workspaceId, batchId } = req.body;
 
-  if (!name || !description || !leader || !leader.email || !mentorId) {
+  if (!name || !description || !leader || !leader.email || !batchId) {
     return res
       .status(400)
-      .json(new ApiError(400, "name, description, leader (with email), and mentorId are required"));
+      .json(new ApiError(400, "name, description, leader (with email), and batchId are required"));
+  }
+
+  // Resolve the coordinator from the Batch if mentorId is not provided
+  let resolvedMentorId = mentorId;
+  if (!resolvedMentorId && batchId) {
+    const batch = await Batch.findById(batchId).lean();
+    if (!batch) {
+      return res.status(404).json(new ApiError(404, "Batch not found"));
+    }
+    resolvedMentorId = batch.coordinators?.[0] || batch.createdBy;
+  }
+
+  if (!resolvedMentorId) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "Could not resolve a coordinator for this batch"));
   }
 
   const project = await Project.create({
     name,
     description,
-    createdBy: mentorId,
+    createdBy: resolvedMentorId,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
   });
 
   await ProjectMember.create({
-    user: mentorId,
+    user: resolvedMentorId,
     project: project._id,
     role: UserRolesEnum.ADMIN,
   });
 
-  const inviterName = req.user?.fullname || "A Coordinator";
+  // Resolve inviter name from the coordinator user, since this is a public route
+  let inviterName = "A Coordinator";
+  const coordinatorUser = await User.findById(resolvedMentorId).lean();
+  if (coordinatorUser) inviterName = coordinatorUser.fullname || inviterName;
+
   let instituteName = "Your Institution";
   if (workspaceId) {
     const workspace = await InstitutionWorkspace.findById(workspaceId);

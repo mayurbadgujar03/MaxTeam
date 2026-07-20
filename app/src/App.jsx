@@ -20,6 +20,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import BatchesPage from "./pages/BatchesPage";
+import IntakeFormPage from "./pages/IntakeFormPage";
 
 const Router = typeof window !== 'undefined' && window.navigator.userAgent.toLowerCase().includes('electron')
   ? HashRouter
@@ -52,6 +53,9 @@ const App = () => (
                   <Route path="/auth/reset-password/:token" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/auth/verify-email" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/auth/verify-email/:token" element={<Navigate to="/auth/login" replace />} />
+
+                  {/* Public intake form — outside ProtectedRoute */}
+                  <Route path="/intake/:batchId" element={<IntakeFormPage />} />
 
                   <Route
                     element={
