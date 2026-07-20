@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { InstitutionAdminRoute } from "@/components/auth/InstitutionAdminRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 import Index from "./pages/Index";
@@ -69,7 +70,14 @@ const App = () => (
                     <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/batches" element={<BatchesPage />} />
+                    <Route 
+                      path="/batches" 
+                      element={
+                        <InstitutionAdminRoute>
+                          <BatchesPage />
+                        </InstitutionAdminRoute>
+                      } 
+                    />
                   </Route>
 
                   <Route

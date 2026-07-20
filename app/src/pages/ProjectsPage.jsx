@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { activeWorkspace } = useAuth();
+  const { activeWorkspace, workspaces } = useAuth();
 
   const queryClient = useQueryClient();
   const { socket } = useSocket();
@@ -75,10 +75,12 @@ export default function ProjectsPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
+          {(activeWorkspace === 'PERSONAL' || workspaces?.find(ws => ws._id === activeWorkspace)?.isHod) && (
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New Project
+            </Button>
+          )}
         </div>
       </div>
 
@@ -175,12 +177,16 @@ export default function ProjectsPage() {
             <FolderKanban className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <h3 className="mb-1 font-medium">No projects yet</h3>
             <p className="mb-4 text-sm text-muted-foreground">
-              Create your first project to get started
+              {activeWorkspace === 'PERSONAL' || workspaces?.find(ws => ws._id === activeWorkspace)?.isHod
+                ? 'Create your first project to get started'
+                : 'You have not been assigned to any projects in this workspace yet.'}
             </p>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Create Project
-            </Button>
+            {(activeWorkspace === 'PERSONAL' || workspaces?.find(ws => ws._id === activeWorkspace)?.isHod) && (
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Create Project
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

@@ -7,16 +7,35 @@ import mongoose from "mongoose";
 
 const getDashboardStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { workspaceId } = req.query;
 
-  const allMyProjects = await ProjectMember.find({ user: userId }).lean();
-  const allProjectIds = allMyProjects.map((pm) => pm.project);
+  // Fetch memberships and populate project workspaceId for filtering
+  const allMyProjects = await ProjectMember.find({ user: userId })
+    .populate({
+      path: "project",
+      select: "workspaceId",
+    })
+    .lean();
+
+  // Filter project IDs based on active workspace selection
+  const filteredProjectIds = allMyProjects
+    .filter((pm) => {
+      if (!pm.project) return false;
+      const projectWorkspaceIdStr = pm.project.workspaceId ? pm.project.workspaceId.toString() : null;
+      if (workspaceId && workspaceId !== 'PERSONAL') {
+        return projectWorkspaceIdStr === workspaceId;
+      } else {
+        return projectWorkspaceIdStr === null;
+      }
+    })
+    .map((pm) => pm.project._id);
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const taskStats = await ProjectTask.aggregate([
     {
       $match: {
-        project: { $in: allProjectIds },
+        project: { $in: filteredProjectIds },
         assignedTo: new mongoose.Types.ObjectId(userId),
       },
     },
@@ -58,6 +77,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const overdueTasksCount = taskStats[0]?.overdueTasks[0]?.count || 0;
 
   const priorityTasks = await ProjectTask.find({
+    project: { $in: filteredProjectIds },
     assignedTo: userId,
     status: { $ne: TaskStatusEnum.DONE },
   })
@@ -73,7 +93,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         activeTasks: activeTasksCount,
         completedTasks: completedTasksCount,
         overdueTasks: overdueTasksCount,
-        totalProjects: allProjectIds.length,
+        totalProjects: filteredProjectIds.length,
         priorityTasks,
       },
       "Dashboard stats fetched successfully",

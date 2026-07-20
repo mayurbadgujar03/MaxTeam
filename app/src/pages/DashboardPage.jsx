@@ -10,15 +10,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, activeWorkspace } = useAuth();
   const { data: projectsData, isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => projectsApi.getAll(),
+    queryKey: ['projects', activeWorkspace],
+    queryFn: () => projectsApi.getAll(activeWorkspace),
   });
 
   const { data: statsData, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: () => dashboardApi.getStats(),
+    queryKey: ['dashboard-stats', activeWorkspace],
+    queryFn: () => dashboardApi.getStats(activeWorkspace),
   });
 
   const projects = projectsData?.data || [];

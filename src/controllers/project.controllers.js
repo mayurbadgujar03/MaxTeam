@@ -9,6 +9,7 @@ import { ProjectTask } from "../models/task.models.js";
 import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { Notification } from "../models/notification.models.js";
+import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { clearProjectCommitCache } from "./codetrack.controllers.js";
 import mongoose from "mongoose";
 
@@ -103,6 +104,28 @@ const createProject = asyncHandler(async (req, res) => {
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
+  }
+
+  if (workspaceId) {
+    const workspace = await InstitutionWorkspace.findById(workspaceId);
+    if (!workspace) {
+      return res.status(404).json(new ApiError(404, "Workspace not found"));
+    }
+
+    const isHod = workspace.authorizedHods.some(
+      (hodId) => hodId.toString() === userId.toString()
+    );
+
+    if (!isHod) {
+      return res
+        .status(403)
+        .json(
+          new ApiError(
+            403,
+            "Only HODs can manually create projects in an institutional workspace."
+          )
+        );
+    }
   }
 
   const user = await User.findById(userId);
