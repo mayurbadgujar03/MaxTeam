@@ -11,28 +11,38 @@ import { sendEmail, ghostInvitationMailgenContent } from "../utils/mail.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 
 const processBatchIntake = asyncHandler(async (req, res) => {
-  const { name, description, leader, members, mentorId, workspaceId, batchId } = req.body;
+  const { name, description, leader, members, mentor, workspaceId, batchId } = req.body;
 
-  if (!name || !description || !leader || !leader.email || !batchId) {
+  if (!name || !description || !leader || !leader.email || !mentor || !mentor.email || !batchId) {
     return res
       .status(400)
-      .json(new ApiError(400, "name, description, leader (with email), and batchId are required"));
+      .json(new ApiError(400, "name, description, leader (with email), mentor (with email), and batchId are required"));
   }
 
-  // Resolve the coordinator from the Batch if mentorId is not provided
-  let resolvedMentorId = mentorId;
-  if (!resolvedMentorId && batchId) {
-    const batch = await Batch.findById(batchId).lean();
-    if (!batch) {
-      return res.status(404).json(new ApiError(404, "Batch not found"));
-    }
+  // Resolve the batch for fallback and context
+  const batch = await Batch.findById(batchId).lean();
+  if (!batch) {
+    return res.status(404).json(new ApiError(404, "Batch not found"));
+  }
+
+  // Resolve mentor: look up by email
+  const mentorEmailNormalized = mentor.email.toLowerCase().trim();
+  const existingMentor = await User.findOne({ email: mentorEmailNormalized });
+  let resolvedMentorId;
+  let mentorNeedsGhostInvite = false;
+
+  if (existingMentor) {
+    resolvedMentorId = existingMentor._id;
+  } else {
+    // Mentor not registered yet — fall back to batch coordinator/creator as project owner
     resolvedMentorId = batch.coordinators?.[0] || batch.createdBy;
+    mentorNeedsGhostInvite = true;
   }
 
   if (!resolvedMentorId) {
     return res
       .status(400)
-      .json(new ApiError(400, "Could not resolve a coordinator for this batch"));
+      .json(new ApiError(400, "Could not resolve a project owner for this batch"));
   }
 
   const project = await Project.create({
@@ -49,10 +59,20 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     role: UserRolesEnum.ADMIN,
   });
 
-  // Resolve inviter name from the coordinator user, since this is a public route
+  // Ghost-invite the mentor if they don't have an account yet
+  if (mentorNeedsGhostInvite) {
+    await PreInvitation.create({
+      email: mentorEmailNormalized,
+      projectId: project._id,
+      role: UserRolesEnum.ADMIN,
+      workspaceId: workspaceId || undefined,
+    });
+  }
+
+  // Resolve inviter name for emails
   let inviterName = "A Coordinator";
-  const coordinatorUser = await User.findById(resolvedMentorId).lean();
-  if (coordinatorUser) inviterName = coordinatorUser.fullname || inviterName;
+  const ownerUser = await User.findById(resolvedMentorId).lean();
+  if (ownerUser) inviterName = ownerUser.fullname || inviterName;
 
   let instituteName = "Your Institution";
   if (workspaceId) {

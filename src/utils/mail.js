@@ -1,5 +1,4 @@
 import Mailgen from "mailgen";
-import { ApiError } from "../utils/api-error.js";
 import { Resend } from "resend";
 
 const sendEmail = async (options) => {
@@ -27,7 +26,8 @@ const sendEmail = async (options) => {
   try {
     await resend.emails.send(mail);
   } catch (error) {
-    throw new ApiError(400, "Failed to send email");
+    console.error("Resend email error:", error?.message || error);
+    throw new Error(`Failed to send email: ${error?.message}`);
   }
 };
 

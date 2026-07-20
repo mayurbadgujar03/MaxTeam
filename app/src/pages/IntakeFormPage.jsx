@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Send,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function IntakeFormPage() {
@@ -31,6 +32,8 @@ export default function IntakeFormPage() {
   // Form state
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
+  const [mentorName, setMentorName] = useState('');
+  const [mentorEmail, setMentorEmail] = useState('');
   const [leaderName, setLeaderName] = useState('');
   const [leaderEmail, setLeaderEmail] = useState('');
   const [memberRows, setMemberRows] = useState([{ name: '', email: '' }]);
@@ -73,14 +76,18 @@ export default function IntakeFormPage() {
     e.preventDefault();
     setSubmitError(null);
 
-    if (!projectName.trim() || !description.trim() || !leaderEmail.trim()) {
-      setSubmitError('Please fill in the project name, description, and team leader email.');
+    if (!projectName.trim() || !description.trim() || !mentorEmail.trim() || !leaderEmail.trim()) {
+      setSubmitError('Please fill in the project name, description, mentor email, and team leader email.');
       return;
     }
 
     const payload = {
       name: projectName.trim(),
       description: description.trim(),
+      mentor: {
+        name: mentorName.trim() || undefined,
+        email: mentorEmail.trim(),
+      },
       leader: {
         name: leaderName.trim() || undefined,
         email: leaderEmail.trim(),
@@ -244,6 +251,45 @@ export default function IntakeFormPage() {
                   rows={4}
                   className="resize-none"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Project Mentor / Guide Section */}
+          <Card className="border shadow-lg mt-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Project Mentor / Guide
+              </CardTitle>
+              <CardDescription>
+                The faculty mentor who will oversee and evaluate this project.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mentorName">Full Name</Label>
+                  <Input
+                    id="mentorName"
+                    placeholder="Prof. Jane Smith"
+                    value={mentorName}
+                    onChange={(e) => setMentorName(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mentorEmail">Email Address *</Label>
+                  <Input
+                    id="mentorEmail"
+                    type="email"
+                    placeholder="mentor@university.edu"
+                    value={mentorEmail}
+                    onChange={(e) => setMentorEmail(e.target.value)}
+                    required
+                    className="h-10"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

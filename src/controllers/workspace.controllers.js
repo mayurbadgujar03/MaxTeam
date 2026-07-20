@@ -36,7 +36,8 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     .select("_id name")
     .lean();
 
-  // Merge and deduplicate
+  // Merge and deduplicate, tagging each workspace with the user's role
+  const hodIdSet = new Set(hodWorkspaces.map((ws) => ws._id.toString()));
   const merged = [...hodWorkspaces, ...memberWorkspaces];
   const seen = new Set();
   const workspaces = [];
@@ -45,7 +46,7 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     const idStr = ws._id.toString();
     if (!seen.has(idStr)) {
       seen.add(idStr);
-      workspaces.push(ws);
+      workspaces.push({ ...ws, isHod: hodIdSet.has(idStr) });
     }
   }
 
