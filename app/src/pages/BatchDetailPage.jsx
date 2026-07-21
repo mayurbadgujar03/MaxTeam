@@ -357,7 +357,6 @@ export default function BatchDetailPage() {
             </CardContent>
           </Card>
           </div>
-        </div>
 
         {/* Batch Info & Administration Sidebar (Right 1 column) */}
         <div className="space-y-6">
