@@ -354,7 +354,8 @@ export default function BatchDetailPage() {
                   </table>
                 </div>
               )}
-            </Card>
+            </CardContent>
+          </Card>
           </div>
         </div>
 
