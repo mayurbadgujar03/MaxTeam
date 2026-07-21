@@ -14,18 +14,23 @@ import { Copy, Plus, School, Library, Loader2, ClipboardCheck, UserPlus, Mail } 
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function BatchManagementTab() {
-  const { activeWorkspace } = useAuth();
+  const { activeWorkspace, workspaces } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [coordinatorEmails, setCoordinatorEmails] = useState('');
+  
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
   const isPersonal = activeWorkspace === 'PERSONAL';
+  const isHod = workspaces?.find((ws) => ws._id === activeWorkspace)?.isHod || false;
 
   const { data: batchesData, isLoading } = useQuery({
     queryKey: ['batches', activeWorkspace],
@@ -53,6 +58,43 @@ export function BatchManagementTab() {
       });
     },
   });
+
+  const updateCoordinatorsMutation = useMutation({
+    mutationFn: ({ batchId, emails }) => batchesApi.updateBatchCoordinators(batchId, emails),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batches', activeWorkspace] });
+      toast({
+        title: 'Coordinators updated',
+        description: 'Batch coordinators have been updated successfully.',
+      });
+      setIsAssignOpen(false);
+      setSelectedBatch(null);
+      setCoordinatorEmails('');
+    },
+    onError: (err) => {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to update coordinators',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleOpenAssignDialog = (batch) => {
+    setSelectedBatch(batch);
+    setCoordinatorEmails(batch.coordinators?.map(c => c.email).join(', ') || '');
+    setIsAssignOpen(true);
+  };
+
+  const handleUpdateCoordinators = (e) => {
+    e.preventDefault();
+    if (!selectedBatch) return;
+    const emailsArray = coordinatorEmails
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
+    updateCoordinatorsMutation.mutate({ batchId: selectedBatch._id, emails: emailsArray });
+  };
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -287,7 +329,7 @@ export function BatchManagementTab() {
                   </CardDescription>
                 </CardHeader>
               </Link>
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 space-y-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -306,11 +348,65 @@ export function BatchManagementTab() {
                     </>
                   )}
                 </Button>
+
+                {isHod && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-200 dark:border-indigo-800"
+                    onClick={() => handleOpenAssignDialog(batch)}
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Assign Coordinators
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+      {/* Assign Coordinators Dialog */}
+      <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Batch Coordinators</DialogTitle>
+            <DialogDescription>
+              Assign faculty members to manage the batch dashboard and registrations.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateCoordinators} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="coordinator-emails">Coordinators Emails (comma-separated)</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="coordinator-emails"
+                  placeholder="co1@uni.edu, co2@uni.edu"
+                  value={coordinatorEmails}
+                  onChange={(e) => setCoordinatorEmails(e.target.value)}
+                  className="pl-9"
+                  required
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Assigned users must already have registered accounts to be added.
+              </p>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAssignOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateCoordinatorsMutation.isPending} className="gap-2">
+                {updateCoordinatorsMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Save Assignments'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
