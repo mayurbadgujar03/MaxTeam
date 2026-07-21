@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { batchesApi } from '@/api/batches';
@@ -276,14 +277,16 @@ export function BatchManagementTab() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {batches.map((batch) => (
             <Card key={batch._id} className="hover-lift border border-slate-200 dark:border-slate-800 bg-card shadow-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-50 truncate">
-                  {batch.name}
-                </CardTitle>
-                <CardDescription className="text-xs text-indigo-500 font-semibold truncate">
-                  {batch.department}
-                </CardDescription>
-              </CardHeader>
+              <Link to={`/batches/${batch._id}`} className="block">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-50 truncate hover:text-indigo-500 transition-colors">
+                    {batch.name}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-indigo-500 font-semibold truncate">
+                    {batch.department}
+                  </CardDescription>
+                </CardHeader>
+              </Link>
               <CardContent className="pt-4">
                 <Button
                   variant="outline"

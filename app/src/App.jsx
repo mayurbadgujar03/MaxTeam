@@ -22,6 +22,7 @@ import SettingsPage from "./pages/SettingsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import BatchesPage from "./pages/BatchesPage";
 import IntakeFormPage from "./pages/IntakeFormPage";
+import BatchDetailPage from "./pages/BatchDetailPage";
 
 const Router = typeof window !== 'undefined' && window.navigator.userAgent.toLowerCase().includes('electron')
   ? HashRouter
@@ -75,6 +76,14 @@ const App = () => (
                       element={
                         <InstitutionAdminRoute>
                           <BatchesPage />
+                        </InstitutionAdminRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/batches/:batchId" 
+                      element={
+                        <InstitutionAdminRoute>
+                          <BatchDetailPage />
                         </InstitutionAdminRoute>
                       } 
                     />
