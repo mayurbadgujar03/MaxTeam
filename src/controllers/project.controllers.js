@@ -10,35 +10,67 @@ import { ProjectSubTask } from "../models/subtask.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { Notification } from "../models/notification.models.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
+import { Batch } from "../models/batch.models.js";
 import { clearProjectCommitCache } from "./codetrack.controllers.js";
 import mongoose from "mongoose";
 
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { workspaceId } = req.query;
 
-  const memberShips = await ProjectMember.find({
-    user: new mongoose.Types.ObjectId(userId),
-  })
-    .select("project")
-    .lean();
-
-  if (!memberShips.length) {
-    return res.status(200).json(new ApiResponse(200, [], "No projects found"));
+  let isHod = false;
+  if (workspaceId && workspaceId !== 'PERSONAL') {
+    const workspace = await InstitutionWorkspace.findById(workspaceId).lean();
+    if (workspace) {
+      isHod = workspace.authorizedHods?.some(
+        (hodId) => hodId.toString() === userId.toString()
+      ) || false;
+    }
   }
 
-  const projectIds = memberShips.map((m) => m.project);
+  let filter = { deletedAt: null };
 
-  const { workspaceId } = req.query;
-  const filter = { _id: { $in: projectIds } };
-  if (workspaceId && workspaceId !== 'PERSONAL') {
+  if (isHod) {
+    // HOD has omnipresent access to all projects in this workspace
     filter.workspaceId = workspaceId;
   } else {
-    filter.workspaceId = null;
+    // Standard User / Coordinator / Personal workspace
+    const memberShips = await ProjectMember.find({
+      user: new mongoose.Types.ObjectId(userId),
+    })
+      .select("project")
+      .lean();
+    const memberProjectIds = memberShips.map((m) => m.project);
+
+    let coordinatorBatchIds = [];
+    if (workspaceId && workspaceId !== 'PERSONAL') {
+      const coordinatorBatches = await Batch.find({
+        workspaceId,
+        coordinators: userId,
+      })
+        .select("_id")
+        .lean();
+      coordinatorBatchIds = coordinatorBatches.map((b) => b._id);
+    }
+
+    if (workspaceId && workspaceId !== 'PERSONAL') {
+      filter.workspaceId = workspaceId;
+      filter.$or = [
+        { _id: { $in: memberProjectIds } },
+        { batchId: { $in: coordinatorBatchIds } },
+      ];
+    } else {
+      filter.workspaceId = null;
+      filter._id = { $in: memberProjectIds };
+    }
   }
 
-  const projects = await Project.find(filter).lean();
+  const projects = await Project.find(filter)
+    .populate("batchId", "name department")
+    .lean();
 
   // Fetch all members for these projects
+  const projectIds = projects.map((p) => p._id);
   const allMembers = await ProjectMember.find({ project: { $in: projectIds } })
     .populate("user", "username fullname avatar")
     .lean();
