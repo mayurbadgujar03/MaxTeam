@@ -58,10 +58,6 @@ export const AvailableFeedbackStatuses = Object.values(FeedbackStatusEnum);
 
 export const DocumentFileTypeEnum = {
     PDF: "pdf",
-    DOC: "doc",
-    DOCX: "docx",
-    PPT: "ppt",
-    PPTX: "pptx",
 };
 
 export const AvailableDocumentFileTypes = Object.values(DocumentFileTypeEnum);

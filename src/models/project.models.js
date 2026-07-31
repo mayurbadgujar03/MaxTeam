@@ -14,6 +14,9 @@ const documentSubSchema = {
     type: String,
     enum: AvailableDocumentFileTypes,
   },
+  fileSize: {
+    type: Number,
+  },
   uploadedAt: {
     type: Date,
   },
@@ -62,8 +65,8 @@ const projectSchema = new Schema(
       default: null,
     },
     documents: {
-      report: documentSubSchema,
-      presentation: documentSubSchema,
+      report: [documentSubSchema],
+      presentation: [documentSubSchema],
     },
   },
   {

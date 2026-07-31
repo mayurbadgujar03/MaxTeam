@@ -56,4 +56,21 @@ export const projectsApi = {
     const response = await apiClient.get(`/project/${projectId}/commits`);
     return response;
   },
+
+  async uploadDocument(projectId, docType, formData) {
+    const response = await apiClient.post(
+      `/project/${projectId}/documents/${docType}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return response;
+  },
+
+  async deleteDocument(projectId, docType, versionIndex) {
+    const url = versionIndex != null
+      ? `/project/${projectId}/documents/${docType}?versionIndex=${versionIndex}`
+      : `/project/${projectId}/documents/${docType}`;
+    const response = await apiClient.delete(url);
+    return response;
+  },
 };

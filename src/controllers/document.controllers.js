@@ -8,19 +8,12 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { Project } from "../models/project.models.js";
-import { AvailableDocumentFileTypes } from "../utils/constants.js";
 
 // Valid document slots on the Project schema (documents.report / documents.presentation)
 const VALID_DOC_TYPES = ["report", "presentation"];
 
-// Map allowed MIME types to our document file-type enum so we can derive the extension
-const MIME_TYPE_MAP = {
-  "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-  "application/vnd.ms-powerpoint": "ppt",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
-};
+// Maximum number of versions to retain per document slot
+const MAX_VERSIONS = 3;
 
 // Lazily build a single R2-backed S3 client from environment credentials
 let r2Client = null;
@@ -36,6 +29,25 @@ const getR2Client = () => {
     });
   }
   return r2Client;
+};
+
+/**
+ * Derive the R2 storage key from a public URL.
+ * The key is everything after the R2_PUBLIC_URL prefix.
+ */
+const getR2KeyFromUrl = (url) => url.replace(process.env.R2_PUBLIC_URL, "");
+
+/**
+ * Delete a single object from R2 by its storage key.
+ */
+const deleteR2Object = async (key) => {
+  const client = getR2Client();
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: key,
+    }),
+  );
 };
 
 const uploadProjectDocument = asyncHandler(async (req, res) => {
@@ -56,17 +68,10 @@ const uploadProjectDocument = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "No file uploaded"));
   }
 
-  const fileType = MIME_TYPE_MAP[req.file.mimetype];
-
-  if (!fileType || !AvailableDocumentFileTypes.includes(fileType)) {
+  if (req.file.mimetype !== "application/pdf") {
     return res
       .status(400)
-      .json(
-        new ApiError(
-          400,
-          `Unsupported file type. Allowed types: ${AvailableDocumentFileTypes.join(", ")}`,
-        ),
-      );
+      .json(new ApiError(400, "Only PDF files are allowed."));
   }
 
   const project = await Project.findById(projectId);
@@ -75,15 +80,8 @@ const uploadProjectDocument = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
 
-  if (project.documents?.[docType]?.isLocked) {
-    return res
-      .status(403)
-      .json(new ApiError(403, "This document is locked and cannot be replaced"));
-  }
-
-  const ext = fileType;
-  const key = `projects/${projectId}/${docType}-${Date.now()}.${ext}`;
-
+  // ── Upload new file to Cloudflare R2 ──────────────────────────────────
+  const key = `projects/${projectId}/${docType}-${Date.now()}.pdf`;
   const client = getR2Client();
 
   await client.send(
@@ -97,14 +95,44 @@ const uploadProjectDocument = asyncHandler(async (req, res) => {
 
   const publicUrl = `${process.env.R2_PUBLIC_URL}${key}`;
 
-  project.documents[docType] = {
-    ...(project.documents[docType]?.toObject?.() ?? project.documents[docType]),
+  // ── Push new version into the versions array ──────────────────────────
+  const newVersion = {
     url: publicUrl,
     fileName: req.file.originalname,
-    fileType,
+    fileType: "pdf",
+    fileSize: req.file.size,
     uploadedAt: new Date(),
     uploadedBy: req.user._id,
   };
+
+  // Ensure the array exists (first-time upload on a pre-existing project)
+  if (!project.documents[docType]) {
+    project.documents[docType] = [];
+  }
+
+  project.documents[docType].push(newVersion);
+
+  // ── 3-Tier Auto-Delete: prune oldest version when exceeding MAX_VERSIONS ─
+  if (project.documents[docType].length > MAX_VERSIONS) {
+    const oldest = project.documents[docType][0];
+
+    // Delete the oldest file from Cloudflare R2
+    if (oldest?.url) {
+      try {
+        const oldKey = getR2KeyFromUrl(oldest.url);
+        await deleteR2Object(oldKey);
+      } catch (err) {
+        // Log but don't block the upload – the metadata will still be pruned
+        console.error(
+          `[DocumentHub] Failed to delete oldest R2 object for ${docType}:`,
+          err.message,
+        );
+      }
+    }
+
+    // Remove the oldest entry from the array
+    project.documents[docType].shift();
+  }
 
   await project.save();
 
@@ -121,6 +149,10 @@ const uploadProjectDocument = asyncHandler(async (req, res) => {
 
 const deleteProjectDocument = asyncHandler(async (req, res) => {
   const { projectId, docType } = req.params;
+  // Optional: versionIndex query param to delete a specific version
+  const versionIndex = req.query.versionIndex != null
+    ? parseInt(req.query.versionIndex, 10)
+    : null;
 
   if (!VALID_DOC_TYPES.includes(docType)) {
     return res
@@ -139,44 +171,59 @@ const deleteProjectDocument = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Project not found"));
   }
 
-  const document = project.documents?.[docType];
+  const versions = project.documents?.[docType];
 
-  if (!document || !document.url) {
+  if (!versions || versions.length === 0) {
     return res.status(404).json(new ApiError(404, "No document to delete"));
   }
 
-  if (document.isLocked) {
-    return res
-      .status(403)
-      .json(new ApiError(403, "This document is locked and cannot be deleted"));
+  // If a specific version index was provided, delete only that version
+  if (versionIndex !== null) {
+    if (versionIndex < 0 || versionIndex >= versions.length) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Invalid version index"));
+    }
+
+    const target = versions[versionIndex];
+
+    if (target.isLocked) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "This document version is locked and cannot be deleted"));
+    }
+
+    // Delete from R2
+    if (target.url) {
+      const key = getR2KeyFromUrl(target.url);
+      await deleteR2Object(key);
+    }
+
+    // Remove from array
+    project.documents[docType].splice(versionIndex, 1);
+  } else {
+    // Default: delete the latest (last) version
+    const latest = versions[versions.length - 1];
+
+    if (latest.isLocked) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "This document is locked and cannot be deleted"));
+    }
+
+    if (latest.url) {
+      const key = getR2KeyFromUrl(latest.url);
+      await deleteR2Object(key);
+    }
+
+    project.documents[docType].pop();
   }
-
-  // Derive the storage key from the public URL (R2_PUBLIC_URL + key)
-  const key = document.url.replace(process.env.R2_PUBLIC_URL, "");
-
-  const client = getR2Client();
-
-  await client.send(
-    new DeleteObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: key,
-    }),
-  );
-
-  project.documents[docType] = {
-    url: null,
-    fileName: null,
-    fileType: null,
-    uploadedAt: null,
-    uploadedBy: null,
-    isLocked: false,
-  };
 
   await project.save();
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Document deleted successfully"));
+    .json(new ApiResponse(200, project.documents[docType], "Document deleted successfully"));
 });
 
 export { uploadProjectDocument, deleteProjectDocument };
