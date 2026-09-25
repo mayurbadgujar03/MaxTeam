@@ -173,11 +173,20 @@ export function MembersList({ projectId, members: propMembers, isAdmin = false, 
       setRole('member');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      if (error.statusCode === 403) {
+        // TODO (Phase 4): Trigger UpgradeModal open state here instead of toast
+        toast({
+          title: 'Upgrade Required',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to add member',
+          variant: 'destructive',
+        });
+      }
     },
   });
 

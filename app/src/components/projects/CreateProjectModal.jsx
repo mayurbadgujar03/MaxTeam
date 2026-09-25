@@ -42,11 +42,20 @@ export function CreateProjectModal({ open, onOpenChange }) {
       setDescription('');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create project',
-        variant: 'destructive',
-      });
+      if (error.statusCode === 403) {
+        // TODO (Phase 4): Trigger UpgradeModal open state here instead of toast
+        toast({
+          title: 'Upgrade Required',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create project',
+          variant: 'destructive',
+        });
+      }
     },
   });
 
