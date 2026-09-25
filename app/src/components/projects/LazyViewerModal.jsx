@@ -1,16 +1,45 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MentionsInput, Mention } from 'react-mentions';
 import { commentsApi } from '@/api/comments';
 import { membersApi } from '@/api/members';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { MessageSquare, Send, FileText, Loader2, Navigation } from 'lucide-react';
 import { getPremiumAvatarUrl } from '@/utils/avatar';
+
+const renderCommentContent = (content) => {
+  if (!content) return '';
+  const mentionRegex = /@\[([^\]]+)\]\([a-zA-Z0-9_-]+\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mentionRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <span
+        key={match.index}
+        className="font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-1 py-0.5 rounded"
+      >
+        @{match[1]}
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push(content.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : content;
+};
 
 export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, documentName, projectId, docType }) {
   const { toast } = useToast();
@@ -19,6 +48,7 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
 
   const [newComment, setNewComment] = useState('');
   const [pageNumber, setPageNumber] = useState('');
+  const [mentionIds, setMentionIds] = useState([]);
 
   // Fetch comments query
   const { data: commentsData, isLoading } = useQuery({
@@ -38,6 +68,13 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
   const projectMembers = membersData?.data || [];
   console.log("Project Members for Mentions:", projectMembers);
 
+  const mentionSuggestions = projectMembers
+    .filter((member) => member.user?._id)
+    .map((member) => ({
+      id: member.user._id,
+      display: member.user.fullname || member.user.username,
+    }));
+
   // Create comment mutation
   const commentMutation = useMutation({
     mutationFn: (payload) => commentsApi.create(payload),
@@ -45,6 +82,7 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
       queryClient.invalidateQueries({ queryKey: ['comments', documentId] });
       setNewComment('');
       setPageNumber('');
+      setMentionIds([]);
       toast({
         title: 'Annotation Added',
         description: 'Your comment has been pinned to the document.',
@@ -69,6 +107,7 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
       documentId,
       projectId,
       entityType: docType || 'report',
+      mentions: mentionIds,
     });
   };
 
@@ -167,7 +206,7 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
                       )}
                     </div>
                     <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {comment.content}
+                      {renderCommentContent(comment.content)}
                     </p>
                   </div>
                 );
@@ -197,14 +236,34 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
               <Label htmlFor="annotation-input" className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
                 New Annotation
               </Label>
-              <Textarea
+              <MentionsInput
                 id="annotation-input"
-                placeholder="Enter review feedback..."
+                placeholder="Enter review feedback... Type @ to tag members"
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="resize-none h-16 text-xs"
-                required
-              />
+                onChange={(e, newValue, newPlainTextValue, mentions) => {
+                  setNewComment(newValue);
+                  setMentionIds(mentions ? mentions.map((m) => m.id) : []);
+                }}
+                className="min-h-[64px] text-sm w-full border rounded-md"
+                style={{
+                  control: { backgroundColor: 'transparent', fontSize: 14, fontWeight: 'normal' },
+                  input: { margin: 0, padding: 8, outline: 'none' },
+                  suggestions: {
+                    list: { backgroundColor: 'white', border: '1px solid #ccc', fontSize: 14, zIndex: 50 },
+                    item: { padding: '5px 15px', borderBottom: '1px solid #eee' },
+                  },
+                }}
+              >
+                <Mention
+                  trigger="@"
+                  data={mentionSuggestions}
+                  appendSpaceOnAdd={true}
+                  style={{
+                    backgroundColor: '#e0e7ff',
+                    borderRadius: '3px',
+                  }}
+                />
+              </MentionsInput>
             </div>
             <Button
               type="submit"
