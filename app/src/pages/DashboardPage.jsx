@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { FolderKanban, Plus, ArrowRight, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
@@ -239,6 +240,22 @@ export default function DashboardPage() {
                         {project.description || 'No description provided.'}
                       </CardDescription>
                     </CardHeader>
+                    {project.milestones && project.milestones.length > 0 && (
+                      <CardContent className="px-4 pb-4 pt-0">
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-slate-500 dark:text-slate-400">Progress</span>
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)} 
+                            className="h-1.5" 
+                          />
+                        </div>
+                      </CardContent>
+                    )}
                   </Card>
                 </Link>
               ))}

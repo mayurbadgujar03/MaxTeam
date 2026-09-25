@@ -73,4 +73,14 @@ export const projectsApi = {
     const response = await apiClient.delete(url);
     return response;
   },
+
+  async updateMilestone(projectId, milestoneId, data) {
+    const response = await apiClient.patch(`/project/${projectId}/milestones/${milestoneId}`, data);
+    return response;
+  },
+
+  async evaluateMilestone(projectId, milestoneId, status) {
+    const response = await apiClient.patch(`/project/${projectId}/milestones/${milestoneId}/evaluate`, { status });
+    return response;
+  },
 };

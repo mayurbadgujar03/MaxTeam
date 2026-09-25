@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { projectsApi } from '@/api/projects';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -107,6 +108,21 @@ export default function ProjectsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {project.milestones && project.milestones.length > 0 && (
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-slate-500 dark:text-slate-400">Progress</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)} 
+                    className="h-1.5" 
+                  />
+                </div>
+              )}
+
               <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 text-slate-400" />
@@ -141,6 +157,18 @@ export default function ProjectsPage() {
               </p>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-400">
+              {project.milestones && project.milestones.length > 0 && (
+                <div className="hidden md:flex flex-col gap-1 w-28">
+                  <div className="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    <span>Progress</span>
+                    <span>{Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)}%</span>
+                  </div>
+                  <Progress 
+                    value={Math.round((project.milestones.filter(m => m.status === 'APPROVED').length / project.milestones.length) * 100)} 
+                    className="h-1.5" 
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-slate-400" />
                 <span>

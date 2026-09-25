@@ -25,6 +25,7 @@ import { NoteCard, CATEGORY_CONFIG } from "@/components/notes/NoteCard";
 import { MembersList } from "@/components/members/MembersList";
 import DocumentHubTab from "@/components/projects/DocumentHubTab";
 import { CodeTrackTab } from "@/components/projects/CodeTrackTab";
+import TimelineTab from "@/components/projects/TimelineTab";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -41,6 +42,7 @@ import {
   Presentation,
   BookOpen,
   ExternalLink,
+  Calendar,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -293,6 +295,10 @@ export default function ProjectDetailPage() {
               <CheckSquare className="h-4 w-4" />
               Task Board
             </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-2 shrink-0">
+              <Calendar className="h-4 w-4" />
+              Timeline
+            </TabsTrigger>
             <TabsTrigger value="notes" className="gap-2 shrink-0">
               <FileText className="h-4 w-4" />
               Project Notes
@@ -343,6 +349,10 @@ export default function ProjectDetailPage() {
               onTaskModalClose={() => setSearchParams({})}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-6">
+          <TimelineTab project={project} currentUserRole={currentUserRole} />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
