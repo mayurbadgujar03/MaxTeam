@@ -62,6 +62,7 @@ const validateProjectPermission = (roles = []) =>
         );
     }
 
+    req.userRole = givenRole;
     next();
   });
 

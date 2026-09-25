@@ -13,11 +13,13 @@ import {
   createProject,
   deleteMember,
   deleteProject,
+  evaluateMilestone,
   getProjectById,
   getProjectMembers,
   getProjects,
   updateMemberGithub,
   updateMemberRole,
+  updateMilestone,
   updateProject,
 } from "../controllers/project.controllers.js";
 import { getProjectCommits } from "../controllers/codetrack.controllers.js";
@@ -106,5 +108,20 @@ router
     validateProjectPermission(AvailableUserRoles), // at minimum must be a member
     getProjectCommits,                             // controller enforces admin-only
   );
+
+// Timeline Engine — Update & Evaluate milestones
+router.route("/:projectId/milestones/:milestoneId").patch(
+  isLoggedIn,
+  validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
+  enforceNotFrozen,
+  updateMilestone,
+);
+
+router.route("/:projectId/milestones/:milestoneId/evaluate").patch(
+  isLoggedIn,
+  validateProjectPermission([UserRolesEnum.ADMIN]),
+  enforceNotFrozen,
+  evaluateMilestone,
+);
 
 export default router;

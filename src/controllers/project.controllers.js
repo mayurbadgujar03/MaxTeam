@@ -644,16 +644,80 @@ const updateMemberGithub = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, populatedMember, "GitHub username updated successfully"));
 });
 
+const updateMilestone = asyncHandler(async (req, res) => {
+  const { projectId, milestoneId } = req.params;
+  const { title, description } = req.body;
+
+  const project = await Project.findById(projectId);
+  if (!project) return res.status(404).json(new ApiError(404, "Project not found"));
+
+  const milestone = project.milestones.id(milestoneId);
+  if (!milestone) return res.status(404).json(new ApiError(404, "Milestone not found"));
+
+  // Prevent students from editing a week that has already been graded
+  let userRole = req.userRole;
+  if (!userRole) {
+    const member = await ProjectMember.findOne({
+      project: new mongoose.Types.ObjectId(projectId),
+      user: new mongoose.Types.ObjectId(req.user._id),
+    });
+    userRole = member?.role;
+  }
+
+  if (milestone.status !== "PENDING" && userRole !== UserRolesEnum.ADMIN) {
+    return res.status(400).json(new ApiError(400, "Cannot edit a milestone that has already been evaluated."));
+  }
+
+  if (title !== undefined) milestone.title = title;
+  if (description !== undefined) milestone.description = description;
+
+  await project.save();
+
+  return res.status(200).json(new ApiResponse(200, milestone, "Milestone updated successfully"));
+});
+
+const evaluateMilestone = asyncHandler(async (req, res) => {
+  const { projectId, milestoneId } = req.params;
+  const { status } = req.body; // Expecting "APPROVED", "DELAYED", or "PENDING"
+
+  if (!["PENDING", "APPROVED", "DELAYED"].includes(status)) {
+    return res.status(400).json(new ApiError(400, "Invalid status"));
+  }
+
+  const project = await Project.findById(projectId);
+  if (!project) return res.status(404).json(new ApiError(404, "Project not found"));
+
+  const milestone = project.milestones.id(milestoneId);
+  if (!milestone) return res.status(404).json(new ApiError(404, "Milestone not found"));
+
+  milestone.status = status;
+
+  // If moving out of pending, record who did it and when
+  if (status !== "PENDING") {
+    milestone.evaluatedBy = req.user._id;
+    milestone.evaluatedAt = new Date();
+  } else {
+    milestone.evaluatedBy = null;
+    milestone.evaluatedAt = null;
+  }
+
+  await project.save();
+
+  return res.status(200).json(new ApiResponse(200, milestone, `Milestone marked as ${status}`));
+});
+
 export {
   addMemberToProject,
   createProject,
   deleteMember,
   deleteProject,
+  evaluateMilestone,
   generateDynamicTimeline,
   getProjectById,
   getProjectMembers,
   getProjects,
   updateMemberGithub,
   updateMemberRole,
+  updateMilestone,
   updateProject,
 };
