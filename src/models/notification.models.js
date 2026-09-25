@@ -18,6 +18,7 @@ const notificationSchema = new Schema(
         "task_completed",
         "project_updated",
         "member_removed",
+        "comment_mention",
       ],
     },
     message: {
