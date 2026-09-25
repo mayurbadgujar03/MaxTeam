@@ -1,55 +1,38 @@
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { PlanTypeEnum, UserRolesEnum } from "../utils/constants.js";
+import { PlanTypeEnum, MAX_FREE_PROJECTS } from "../utils/constants.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
-import mongoose from "mongoose";
 
-/**
- * enforceFreeWall
- *
- * Blocks project creation when a FREE-tier user already owns or
- * administers >= 1 active project.
- *
- * Must run AFTER `isLoggedIn` so `req.user` is populated.
- */
 const enforceFreeWall = asyncHandler(async (req, res, next) => {
   const { planType } = req.user;
 
-  // Only enforce for FREE plan users
   if (planType !== PlanTypeEnum.FREE) {
     return next();
   }
 
-  const userId = req.user._id;
-
-  // Count projects where the user is the creator
-  const ownedCount = await Project.countDocuments({ createdBy: userId });
-
-  if (ownedCount >= 1) {
-    return res
-      .status(403)
-      .json(
-        new ApiError(
-          403,
-          "Free plan limit reached. Please upgrade to create more projects.",
-        ),
-      );
+  // Bypass personal limit for institutional projects
+  if (req.body.workspaceId) {
+    return next();
   }
 
-  // Also check if user is an ADMIN member on any project (co-ownership)
-  const adminMemberships = await ProjectMember.countDocuments({
-    user: new mongoose.Types.ObjectId(userId),
-    role: UserRolesEnum.ADMIN,
+  const memberships = await ProjectMember.find({ user: req.user._id }).select(
+    "project",
+  );
+  const projectIds = memberships.map((m) => m.project);
+
+  const personalProjectCount = await Project.countDocuments({
+    _id: { $in: projectIds },
+    workspaceId: null,
   });
 
-  if (adminMemberships >= 1) {
+  if (personalProjectCount >= MAX_FREE_PROJECTS) {
     return res
       .status(403)
       .json(
         new ApiError(
           403,
-          "Free plan limit reached. Please upgrade to create more projects.",
+          "Free plan limit reached. You are already participating in a personal project. Please upgrade to create or join more.",
         ),
       );
   }
@@ -57,14 +40,6 @@ const enforceFreeWall = asyncHandler(async (req, res, next) => {
   next();
 });
 
-/**
- * enforceNotFrozen
- *
- * Blocks any mutation on a project that has been frozen due to
- * an expired subscription. Accepts `projectId` from `req.params`.
- *
- * Must run AFTER `isLoggedIn` so `req.user` is populated.
- */
 const enforceNotFrozen = asyncHandler(async (req, res, next) => {
   const { projectId } = req.params;
 

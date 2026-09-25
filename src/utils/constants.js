@@ -41,6 +41,8 @@ export const PlanTypeEnum = {
 
 export const AvailablePlanTypes = Object.values(PlanTypeEnum);
 
+export const MAX_FREE_PROJECTS = 1;
+
 export const FeedbackTypeEnum = {
     BUG: "Bug",
     FEATURE: "Feature",

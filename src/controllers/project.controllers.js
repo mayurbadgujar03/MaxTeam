@@ -1,7 +1,11 @@
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { UserRolesEnum } from "../utils/constants.js";
+import {
+  UserRolesEnum,
+  PlanTypeEnum,
+  MAX_FREE_PROJECTS,
+} from "../utils/constants.js";
 import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectNote } from "../models/note.models.js";
@@ -369,6 +373,31 @@ const addMemberToProject = asyncHandler(async (req, res) => {
 
   if (existingMember) {
     return res.status(400).json(new ApiError(400, "User already a member"));
+  }
+
+  if (!project.workspaceId) {
+    if (user.planType === PlanTypeEnum.FREE) {
+      const memberships = await ProjectMember.find({ user: user._id }).select(
+        "project",
+      );
+      const projectIds = memberships.map((m) => m.project);
+
+      const personalProjectCount = await Project.countDocuments({
+        _id: { $in: projectIds },
+        workspaceId: null,
+      });
+
+      if (personalProjectCount >= MAX_FREE_PROJECTS) {
+        return res
+          .status(403)
+          .json(
+            new ApiError(
+              403,
+              "Cannot add user. This user is on a Free plan and is already participating in their maximum allowed personal projects.",
+            ),
+          );
+      }
+    }
   }
 
   const member = await ProjectMember.create({
