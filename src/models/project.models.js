@@ -30,6 +30,19 @@ const documentSubSchema = {
   },
 };
 
+const milestoneSubSchema = new Schema({
+  weekNumber: { type: Number, required: true },
+  title: { type: String, default: "" },
+  description: { type: String, default: "" },
+  status: { 
+    type: String, 
+    enum: ["PENDING", "APPROVED", "DELAYED"], 
+    default: "PENDING" 
+  },
+  evaluatedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  evaluatedAt: { type: Date, default: null }
+});
+
 const projectSchema = new Schema(
   {
     name: {
@@ -68,6 +81,15 @@ const projectSchema = new Schema(
       report: [documentSubSchema],
       presentation: [documentSubSchema],
     },
+    startDate: {
+      type: Date,
+      default: null,
+    },
+    endDate: {
+      type: Date,
+      default: null,
+    },
+    milestones: [milestoneSubSchema],
   },
   {
     timestamps: true,

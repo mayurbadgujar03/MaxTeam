@@ -9,9 +9,10 @@ import { PreInvitation } from "../models/preinvitation.models.js";
 import { Batch } from "../models/batch.models.js";
 import { sendEmail, ghostInvitationMailgenContent } from "../utils/mail.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
+import { generateDynamicTimeline } from "../utils/helpers.js";
 
 const processBatchIntake = asyncHandler(async (req, res) => {
-  const { name, description, leader, members, mentor, workspaceId, batchId } = req.body;
+  const { name, description, leader, members, mentor, workspaceId, batchId, startDate, endDate } = req.body;
 
   if (!name || !description || !leader || !leader.email || !mentor || !mentor.email || !batchId) {
     return res
@@ -51,6 +52,9 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     createdBy: resolvedMentorId,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
+    startDate: startDate || null,
+    endDate: endDate || null,
+    milestones: generateDynamicTimeline(startDate, endDate),
   });
 
   await ProjectMember.create({

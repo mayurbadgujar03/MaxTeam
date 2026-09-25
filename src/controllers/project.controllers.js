@@ -16,6 +16,7 @@ import { Notification } from "../models/notification.models.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { Batch } from "../models/batch.models.js";
 import { clearProjectCommitCache } from "./codetrack.controllers.js";
+import { generateDynamicTimeline } from "../utils/helpers.js";
 import mongoose from "mongoose";
 
 const getProjects = asyncHandler(async (req, res) => {
@@ -136,7 +137,7 @@ const getProjectById = asyncHandler(async (req, res) => {
 
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { name, description, workspaceId, batchId } = req.body;
+  const { name, description, workspaceId, batchId, startDate, endDate } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -176,6 +177,9 @@ const createProject = asyncHandler(async (req, res) => {
     createdBy: user._id,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
+    startDate: startDate || null,
+    endDate: endDate || null,
+    milestones: generateDynamicTimeline(startDate, endDate),
   });
 
   await ProjectMember.create({
@@ -645,6 +649,7 @@ export {
   createProject,
   deleteMember,
   deleteProject,
+  generateDynamicTimeline,
   getProjectById,
   getProjectMembers,
   getProjects,
