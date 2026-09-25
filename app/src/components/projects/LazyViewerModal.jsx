@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { commentsApi } from '@/api/comments';
+import { membersApi } from '@/api/members';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,15 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
   });
 
   const comments = commentsData?.data?.data || commentsData?.data || [];
+
+  const { data: membersData } = useQuery({
+    queryKey: ['members', projectId],
+    queryFn: () => membersApi.getAll(projectId),
+    enabled: !!projectId,
+  });
+
+  const projectMembers = membersData?.data || [];
+  console.log("Project Members for Mentions:", projectMembers);
 
   // Create comment mutation
   const commentMutation = useMutation({
@@ -143,7 +153,7 @@ export function LazyViewerModal({ open, onOpenChange, documentId, documentUrl, d
                           {comment.author?.fullname || comment.author?.username}
                         </span>
                       </div>
-                      
+
                       {comment.pageNumber != null && (
                         <Button
                           variant="ghost"
