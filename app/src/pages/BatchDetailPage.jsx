@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import BatchAttendanceGrid from '@/components/batches/BatchAttendanceGrid';
 import { useToast } from '@/hooks/use-toast';
 import {
   Loader2,
@@ -28,7 +30,7 @@ import {
 
 export default function BatchDetailPage() {
   const { batchId } = useParams();
-  const { activeWorkspace, workspaces } = useAuth();
+  const { activeWorkspace, workspaces, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -67,6 +69,9 @@ export default function BatchDetailPage() {
   );
 
   const isHod = workspaces?.find((ws) => ws._id === activeWorkspace)?.isHod || false;
+  const isCoordinator = batch?.coordinators?.some(
+    (c) => (c._id || c)?.toString() === user?._id?.toString()
+  ) || false;
 
   useEffect(() => {
     if (batch?.coordinators) {
@@ -259,9 +264,24 @@ export default function BatchDetailPage() {
         </Card>
       </div>
 
-      {/* Main Grid: Projects Table & HOD Controls */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Projects Table (Left 2 columns) */}
+      {/* Tabs Layout: Registered Projects vs Attendance Overview */}
+      <Tabs className="w-full mt-6" defaultValue="projects">
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            <TabsTrigger value="projects" className="gap-2">
+              <FolderKanban className="h-4 w-4" />
+              Registered Projects
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Attendance Overview
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="projects" className="mt-0 space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Projects Table (Left 2 columns) */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="border border-slate-200 dark:border-slate-800 bg-card shadow-card">
             <CardHeader className="pb-3 border-b">
@@ -435,6 +455,16 @@ export default function BatchDetailPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </TabsContent>
+
+    <TabsContent value="attendance" className="mt-0">
+      <BatchAttendanceGrid
+        batchId={batchId}
+        isCoordinator={isCoordinator}
+        isHod={isHod}
+      />
+    </TabsContent>
+  </Tabs>
+</div>
   );
 }

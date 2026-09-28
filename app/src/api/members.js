@@ -21,3 +21,5 @@ export const membersApi = {
     return response;
   },
 };
+
+export default membersApi;

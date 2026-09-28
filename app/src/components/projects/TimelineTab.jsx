@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { projectsApi } from "@/api/projects";
+import AttendanceCard from "./AttendanceCard";
 
 export default function TimelineTab({ project, currentUserRole }) {
   const queryClient = useQueryClient();
@@ -105,6 +106,15 @@ export default function TimelineTab({ project, currentUserRole }) {
                       </Button>
                     )}
                   </div>
+                </div>
+
+                {/* Attendance Tracking Card */}
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <AttendanceCard
+                    projectId={project._id}
+                    milestoneId={milestone._id}
+                    currentUserRole={currentUserRole}
+                  />
                 </div>
 
                 {/* Mentor Evaluation Strip */}

@@ -5,6 +5,8 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { Batch } from "../models/batch.models.js";
+import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { SystemRolesEnum } from "../utils/constants.js";
 
 const isLoggedIn = async (req, res, next) => {
@@ -72,5 +74,29 @@ const isSuperAdmin = (req, res, next) => {
   }
   next();
 };
+
+export const validateBatchAccess = (allowedRoles = ['hod', 'coordinator']) =>
+  asyncHandler(async (req, res, next) => {
+    const { batchId } = req.params;
+    const userId = req.user._id;
+
+    if (!batchId) {
+      return res.status(400).json(new ApiError(400, "batchId is required"));
+    }
+
+    const batch = await Batch.findById(batchId).populate("workspaceId");
+    if (!batch) return res.status(404).json(new ApiError(404, "Batch not found"));
+
+    const isCoordinator = batch.coordinators?.some(c => c.toString() === userId.toString());
+    const isHod = batch.workspaceId?.authorizedHods?.some(hod => hod.toString() === userId.toString());
+
+    req.isBatchCoordinator = isCoordinator;
+    req.isHod = isHod;
+
+    if (allowedRoles.includes('hod') && isHod) return next();
+    if (allowedRoles.includes('coordinator') && isCoordinator) return next();
+
+    return res.status(403).json(new ApiError(403, "You do not have permission to modify this batch"));
+  });
 
 export { isLoggedIn, validateProjectPermission, isSuperAdmin };
