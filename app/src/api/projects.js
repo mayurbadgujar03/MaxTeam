@@ -83,4 +83,9 @@ export const projectsApi = {
     const response = await apiClient.patch(`/project/${projectId}/milestones/${milestoneId}/evaluate`, { status });
     return response;
   },
+
+  async initializeTimeline(projectId, { startDate, endDate }) {
+    const response = await apiClient.post(`/project/${projectId}/timeline/initialize`, { startDate, endDate });
+    return response;
+  },
 };

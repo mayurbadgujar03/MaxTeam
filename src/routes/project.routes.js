@@ -17,6 +17,7 @@ import {
   getProjectById,
   getProjectMembers,
   getProjects,
+  initializeTimeline,
   updateMemberGithub,
   updateMemberRole,
   updateMilestone,
@@ -122,6 +123,14 @@ router.route("/:projectId/milestones/:milestoneId/evaluate").patch(
   validateProjectPermission([UserRolesEnum.ADMIN]),
   enforceNotFrozen,
   evaluateMilestone,
+);
+
+// Initialize Timeline
+router.route("/:projectId/timeline/initialize").post(
+  isLoggedIn,
+  validateProjectPermission([UserRolesEnum.ADMIN, UserRolesEnum.PROJECT_ADMIN]),
+  enforceNotFrozen,
+  initializeTimeline
 );
 
 export default router;

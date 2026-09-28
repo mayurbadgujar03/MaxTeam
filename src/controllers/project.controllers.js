@@ -706,6 +706,40 @@ const evaluateMilestone = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, milestone, `Milestone marked as ${status}`));
 });
 
+const initializeTimeline = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.body;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json(new ApiError(400, "Start date and End date are required"));
+  }
+
+  const project = await Project.findById(projectId);
+  if (!project) return res.status(404).json(new ApiError(404, "Project not found"));
+
+  if (project.milestones && project.milestones.length > 0) {
+    return res.status(400).json(new ApiError(400, "Timeline has already been initialized"));
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return res.status(400).json(new ApiError(400, "Invalid start date or end date format"));
+  }
+
+  if (start >= end) {
+    return res.status(400).json(new ApiError(400, "End date must be strictly after the start date"));
+  }
+
+  project.startDate = start;
+  project.endDate = end;
+  project.milestones = generateDynamicTimeline(start, end);
+  await project.save();
+
+  return res.status(200).json(new ApiResponse(200, project, "Timeline initialized successfully"));
+});
+
 export {
   addMemberToProject,
   createProject,
@@ -716,6 +750,7 @@ export {
   getProjectById,
   getProjectMembers,
   getProjects,
+  initializeTimeline,
   updateMemberGithub,
   updateMemberRole,
   updateMilestone,

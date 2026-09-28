@@ -14,10 +14,30 @@ export default function TimelineTab({ project, currentUserRole }) {
   const { toast } = useToast();
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
+  const [initForm, setInitForm] = useState({ startDate: "", endDate: "" });
 
   const isMentor = currentUserRole === "admin";
   const isLeader = currentUserRole === "project_admin";
   const canEdit = isMentor || isLeader;
+
+  const initMutation = useMutation({
+    mutationFn: (data) => projectsApi.initializeTimeline(project._id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", project._id] });
+      toast({ title: "Timeline initialized successfully!" });
+    },
+    onError: (err) =>
+      toast({
+        title: "Error",
+        description: err.message || "Failed to initialize timeline",
+        variant: "destructive",
+      }),
+  });
+
+  const handleInitialize = (e) => {
+    e.preventDefault();
+    initMutation.mutate(initForm);
+  };
 
   const updateMutation = useMutation({
     mutationFn: ({ milestoneId, data }) => projectsApi.updateMilestone(project._id, milestoneId, data),
@@ -50,11 +70,56 @@ export default function TimelineTab({ project, currentUserRole }) {
   };
 
   if (!project?.milestones || project.milestones.length === 0) {
+    if (!canEdit) {
+      return (
+        <div className="p-12 text-center border rounded-lg bg-card text-slate-500">
+          <Calendar className="h-10 w-10 mx-auto mb-3 text-slate-400" />
+          <p className="font-medium text-lg text-slate-800 dark:text-slate-200">Timeline Not Ready</p>
+          <p className="text-sm mt-1 text-muted-foreground">
+            Your Team Leader or Faculty Mentor has not yet initialized the project timeline.
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-8 text-center text-slate-500 border rounded-lg bg-card">
-        <Calendar className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-        <p className="font-medium">No timeline established.</p>
-        <p className="text-xs text-muted-foreground mt-1">Set project start and end dates to generate weekly milestones.</p>
+      <div className="max-w-md mx-auto mt-10 p-6 border rounded-lg bg-card shadow-sm">
+        <div className="text-center mb-6">
+          <Calendar className="h-10 w-10 mx-auto mb-2 text-primary" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Initialize Project Timeline</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Set the start and end dates to automatically generate your weekly milestones.
+          </p>
+        </div>
+
+        <form onSubmit={handleInitialize} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block text-slate-700 dark:text-slate-300">
+              Project Start Date
+            </label>
+            <Input
+              type="date"
+              required
+              value={initForm.startDate}
+              onChange={(e) => setInitForm({ ...initForm, startDate: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block text-slate-700 dark:text-slate-300">
+              Expected End Date
+            </label>
+            <Input
+              type="date"
+              required
+              value={initForm.endDate}
+              onChange={(e) => setInitForm({ ...initForm, endDate: e.target.value })}
+            />
+          </div>
+
+          <Button className="w-full mt-4" disabled={initMutation.isPending} type="submit">
+            {initMutation.isPending ? "Generating Timeline..." : "Generate Timeline"}
+          </Button>
+        </form>
       </div>
     );
   }
