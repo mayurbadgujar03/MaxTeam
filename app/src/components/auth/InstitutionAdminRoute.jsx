@@ -17,11 +17,13 @@ export function InstitutionAdminRoute({ children }) {
     return <Navigate to="/" replace />;
   }
 
-  // Verify the user is an authorized HOD in the currently active workspace
+  // Verify the user is an authorized HOD or Coordinator in the currently active workspace
   const currentWorkspace = workspaces.find((ws) => ws._id === activeWorkspace);
   const isHod = currentWorkspace?.isHod;
+  const isCoordinator = currentWorkspace?.isCoordinator;
 
-  if (activeWorkspace === 'PERSONAL' || !isHod) {
+  // Allow access if they are either an HOD OR a Coordinator
+  if (activeWorkspace === 'PERSONAL' || (!isHod && !isCoordinator)) {
     return <Navigate to="/dashboard" replace />;
   }
 

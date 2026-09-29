@@ -181,112 +181,114 @@ export function BatchManagementTab() {
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* Invite HOD Dialog */}
-          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
-                <UserPlus className="h-4 w-4" />
-                Invite HOD
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Invite Co-Administrator</DialogTitle>
-                <DialogDescription>
-                  Grant another faculty member HOD-level access to this workspace.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleInviteHod} className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="hod-email">Faculty Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {isHod && (
+          <div className="flex items-center gap-3">
+            {/* Invite HOD Dialog */}
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
+                  <UserPlus className="h-4 w-4" />
+                  Invite HOD
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Invite Co-Administrator</DialogTitle>
+                  <DialogDescription>
+                    Grant another faculty member HOD-level access to this workspace.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleInviteHod} className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="hod-email">Faculty Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="hod-email"
+                        type="email"
+                        placeholder="e.g. professor@university.edu"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      The user must already have a registered account on the platform.
+                    </p>
+                  </div>
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={inviteMutation.isPending || !inviteEmail.trim()} className="gap-2">
+                      {inviteMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4" />
+                          Send Invitation
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Create Batch Dialog */}
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Batch
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create Batch Profile</DialogTitle>
+                  <DialogDescription>
+                    Configure a new batch workspace under your current institutional scope.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreate} className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="batch-name">Batch name</Label>
                     <Input
-                      id="hod-email"
-                      type="email"
-                      placeholder="e.g. professor@university.edu"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="pl-9"
+                      id="batch-name"
+                      placeholder="e.g. B.Tech Computer Science 2026"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       required
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    The user must already have a registered account on the platform.
-                  </p>
-                </div>
-                <DialogFooter className="pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={inviteMutation.isPending || !inviteEmail.trim()} className="gap-2">
-                    {inviteMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4" />
-                        Send Invitation
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-
-          {/* Create Batch Dialog */}
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Batch
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create Batch Profile</DialogTitle>
-              <DialogDescription>
-                Configure a new batch workspace under your current institutional scope.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="batch-name">Batch name</Label>
-                <Input
-                  id="batch-name"
-                  placeholder="e.g. B.Tech Computer Science 2026"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dept">Department</Label>
-                <Input
-                  id="dept"
-                  placeholder="e.g. Computer Engineering"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  required
-                />
-              </div>
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || !name.trim() || !department.trim()}>
-                  {createMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Create Batch'
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-          </Dialog>
-        </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dept">Department</Label>
+                    <Input
+                      id="dept"
+                      placeholder="e.g. Computer Engineering"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createMutation.isPending || !name.trim() || !department.trim()}>
+                      {createMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Create Batch'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       {isLoading ? (

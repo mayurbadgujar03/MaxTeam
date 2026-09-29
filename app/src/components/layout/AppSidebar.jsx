@@ -99,7 +99,8 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
             </NavLink>
           ))}
 
-          {activeWorkspace !== 'PERSONAL' && workspaces.find(ws => ws._id === activeWorkspace)?.isHod && (
+          {activeWorkspace !== 'PERSONAL' && 
+           (workspaces.find(ws => ws._id === activeWorkspace)?.isHod || workspaces.find(ws => ws._id === activeWorkspace)?.isCoordinator) && (
             <NavLink
               to="/batches"
               className={cn(
