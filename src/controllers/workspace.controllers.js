@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { User } from "../models/user.models.js";
+import { Batch } from "../models/batch.models.js";
 
 const getMyWorkspaces = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -16,7 +17,6 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     .lean();
 
   // 2. Workspaces where user is a project member
-  // First, find all projects the user is a member of
   const memberships = await ProjectMember.find({
     user: userId,
   })
@@ -26,19 +26,33 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     })
     .lean();
 
-  const workspaceIds = memberships
+  const memberWorkspaceIds = memberships
     .map((m) => m.project?.workspaceId)
     .filter((id) => id != null);
 
-  const memberWorkspaces = await InstitutionWorkspace.find({
-    _id: { $in: workspaceIds },
+  // 3. NEW: Workspaces where user is a Batch Coordinator
+  const coordinatorBatches = await Batch.find({
+    coordinators: userId,
+  }).select("workspaceId").lean();
+
+  const coordinatorWorkspaceIds = coordinatorBatches
+    .map((b) => b.workspaceId)
+    .filter((id) => id != null);
+
+  // Combine IDs and fetch additional workspaces in one query
+  const additionalWorkspaceIds = [...new Set([...memberWorkspaceIds, ...coordinatorWorkspaceIds])];
+
+  const additionalWorkspaces = await InstitutionWorkspace.find({
+    _id: { $in: additionalWorkspaceIds },
   })
     .select("_id name")
     .lean();
 
   // Merge and deduplicate, tagging each workspace with the user's role
   const hodIdSet = new Set(hodWorkspaces.map((ws) => ws._id.toString()));
-  const merged = [...hodWorkspaces, ...memberWorkspaces];
+  const coordinatorIdSet = new Set(coordinatorWorkspaceIds.map((id) => id.toString()));
+
+  const merged = [...hodWorkspaces, ...additionalWorkspaces];
   const seen = new Set();
   const workspaces = [];
 
@@ -46,7 +60,11 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
     const idStr = ws._id.toString();
     if (!seen.has(idStr)) {
       seen.add(idStr);
-      workspaces.push({ ...ws, isHod: hodIdSet.has(idStr) });
+      workspaces.push({
+        ...ws,
+        isHod: hodIdSet.has(idStr),
+        isCoordinator: coordinatorIdSet.has(idStr)
+      });
     }
   }
 
