@@ -31,6 +31,7 @@ export default function IntakeFormPage() {
 
   // Form state
   const [projectName, setProjectName] = useState('');
+  const [groupNumber, setGroupNumber] = useState('');
   const [description, setDescription] = useState('');
   const [mentorName, setMentorName] = useState('');
   const [mentorEmail, setMentorEmail] = useState('');
@@ -83,6 +84,7 @@ export default function IntakeFormPage() {
 
     const payload = {
       name: projectName.trim(),
+      groupNumber: groupNumber ? Number(groupNumber) : undefined,
       description: description.trim(),
       mentor: {
         name: mentorName.trim() || undefined,
@@ -237,6 +239,18 @@ export default function IntakeFormPage() {
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   required
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="groupNumber">Group Number (Optional)</Label>
+                <Input
+                  id="groupNumber"
+                  type="number"
+                  placeholder="e.g. 1, 2, 33"
+                  value={groupNumber}
+                  onChange={(e) => setGroupNumber(e.target.value)}
+                  min="1"
                   className="h-10"
                 />
               </div>

@@ -65,7 +65,7 @@ export const getBatchWeekAttendance = asyncHandler(async (req, res) => {
     batchId,
     "milestones.weekNumber": weekNumber,
   })
-    .select("name milestones")
+    .select("name milestones groupNumber")
     .lean();
 
   // 2. Fetch and attach members from ProjectMember collection

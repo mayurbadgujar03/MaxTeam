@@ -137,7 +137,7 @@ const getProjectById = asyncHandler(async (req, res) => {
 
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { name, description, workspaceId, batchId, startDate, endDate } = req.body;
+  const { name, description, workspaceId, batchId, startDate, endDate, groupNumber } = req.body;
 
   if (!name || !description) {
     return res.status(400).json(new ApiError(400, "All feilds are required"));
@@ -177,6 +177,7 @@ const createProject = asyncHandler(async (req, res) => {
     createdBy: user._id,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
+    groupNumber: groupNumber ? Number(groupNumber) : null,
     startDate: startDate || null,
     endDate: endDate || null,
     milestones: generateDynamicTimeline(startDate, endDate),

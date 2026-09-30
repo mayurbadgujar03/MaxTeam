@@ -77,6 +77,10 @@ const projectSchema = new Schema(
       ref: "Batch",
       default: null,
     },
+    groupNumber: {
+      type: Number,
+      default: null,
+    },
     documents: {
       report: [documentSubSchema],
       presentation: [documentSubSchema],

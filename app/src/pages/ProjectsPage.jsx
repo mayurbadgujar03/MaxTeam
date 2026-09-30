@@ -101,6 +101,11 @@ export default function ProjectsPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                   <FolderKanban className="h-5 w-5 text-muted-foreground" />
                 </div>
+                {project.groupNumber && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
+                    Group {project.groupNumber}
+                  </span>
+                )}
               </div>
               <CardTitle className="mt-3 text-base text-slate-900 dark:text-slate-50">{project.name}</CardTitle>
               <CardDescription className="line-clamp-2 text-slate-500 dark:text-slate-400">
@@ -151,7 +156,14 @@ export default function ProjectsPage() {
               <FolderKanban className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-900 dark:text-slate-50 truncate">{project.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-50 truncate">{project.name}</h3>
+                {project.groupNumber && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 shrink-0">
+                    Group {project.groupNumber}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                 {project.description || 'No description'}
               </p>

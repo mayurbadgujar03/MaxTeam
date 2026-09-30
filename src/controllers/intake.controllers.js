@@ -12,7 +12,7 @@ import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { generateDynamicTimeline } from "../utils/helpers.js";
 
 const processBatchIntake = asyncHandler(async (req, res) => {
-  const { name, description, leader, members, mentor, workspaceId, batchId, startDate, endDate } = req.body;
+  const { name, description, leader, members, mentor, workspaceId, batchId, startDate, endDate, groupNumber } = req.body;
 
   if (!name || !description || !leader || !leader.email || !mentor || !mentor.email || !batchId) {
     return res
@@ -52,6 +52,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     createdBy: resolvedMentorId,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
+    groupNumber: groupNumber ? Number(groupNumber) : null,
     startDate: startDate || null,
     endDate: endDate || null,
     milestones: generateDynamicTimeline(startDate, endDate),

@@ -19,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 
 export function CreateProjectModal({ open, onOpenChange }) {
   const [name, setName] = useState('');
+  const [groupNumber, setGroupNumber] = useState('');
   const [description, setDescription] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -29,6 +30,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
       projectsApi.create({
         name,
         description,
+        groupNumber: groupNumber ? Number(groupNumber) : undefined,
         workspaceId: activeWorkspace !== 'PERSONAL' ? activeWorkspace : null,
       }),
     onSuccess: () => {
@@ -39,6 +41,7 @@ export function CreateProjectModal({ open, onOpenChange }) {
       });
       onOpenChange(false);
       setName('');
+      setGroupNumber('');
       setDescription('');
     },
     onError: (error) => {
@@ -84,6 +87,17 @@ export function CreateProjectModal({ open, onOpenChange }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="groupNumber">Group Number (optional)</Label>
+              <Input
+                id="groupNumber"
+                type="number"
+                placeholder="e.g. 1, 2, 33"
+                value={groupNumber}
+                onChange={(e) => setGroupNumber(e.target.value)}
+                min="1"
               />
             </div>
             <div className="space-y-2">

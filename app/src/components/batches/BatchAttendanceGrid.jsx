@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock, XCircle, Users, Loader2, Calendar, FolderKanban } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, Users, Loader2, Calendar, FolderKanban, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { attendanceApi } from "@/api/attendance";
 
 export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
   const [selectedWeek, setSelectedWeek] = useState("1");
+  const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -86,6 +88,12 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
   const projects = data?.data?.projects || [];
   const attendances = data?.data?.attendances || [];
 
+  const filteredProjects = projects.filter((p) => {
+    const matchesName = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesGroup = p.groupNumber && p.groupNumber.toString().includes(searchQuery);
+    return matchesName || matchesGroup;
+  });
+
   const StatusBadge = ({ mark, label }) => {
     if (mark === "PRESENT") {
       return (
@@ -122,7 +130,17 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Filter by Group No. or Name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9 text-xs w-[200px]"
+            />
+          </div>
+
           <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Select Week:</span>
           <Select value={selectedWeek} onValueChange={setSelectedWeek}>
             <SelectTrigger className="w-[130px]">
@@ -154,9 +172,19 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
             Projects may not have established milestones for this week yet.
           </p>
         </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="p-12 text-center text-slate-500 bg-card rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center">
+          <Search className="h-10 w-10 text-slate-400 mb-2 opacity-40" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            No projects matching "{searchQuery}"
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Try a different group number or team name.
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
-          {projects.map((project) => {
+          {filteredProjects.map((project) => {
             const milestone = project.milestones?.find((m) => m.weekNumber === parseInt(selectedWeek));
             const studentMembers = (project.members || []).filter((m) => m.role !== "admin");
             const membersToDisplay = studentMembers.length > 0 ? studentMembers : project.members || [];
@@ -182,7 +210,7 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
                   <div>
                     <h4 className="font-semibold text-base text-slate-900 dark:text-slate-50">
-                      {project.name}
+                      {project.groupNumber ? `Group ${project.groupNumber}: ` : ''}{project.name}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {milestone ? (
