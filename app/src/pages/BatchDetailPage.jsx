@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { batchesApi } from '@/api/batches';
@@ -30,6 +30,17 @@ import {
 
 export default function BatchDetailPage() {
   const { batchId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "projects";
+
+  const handleTabChange = (value) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", value);
+      return next;
+    }, { replace: true });
+  };
+
   const { activeWorkspace, workspaces, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -265,7 +276,7 @@ export default function BatchDetailPage() {
       </div>
 
       {/* Tabs Layout: Registered Projects vs Attendance Overview */}
-      <Tabs className="w-full mt-6" defaultValue="projects">
+      <Tabs className="w-full mt-6" value={activeTab} onValueChange={handleTabChange}>
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="projects" className="gap-2">

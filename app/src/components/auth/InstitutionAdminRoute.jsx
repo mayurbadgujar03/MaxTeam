@@ -1,9 +1,23 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export function InstitutionAdminRoute({ children }) {
-  const { isAuthenticated, isLoading, activeWorkspace, workspaces } = useAuth();
+  const { isAuthenticated, isLoading, activeWorkspace, setActiveWorkspace, workspaces } = useAuth();
+
+  // Fix the redirect bug: First check the current workspace
+  let currentWorkspace = workspaces.find((ws) => ws._id === activeWorkspace);
+  let isAuthorized = currentWorkspace?.isHod || currentWorkspace?.isCoordinator;
+
+  useEffect(() => {
+    if (!isLoading && !isAuthorized) {
+      const firstAuthorized = workspaces.find((ws) => ws.isHod || ws.isCoordinator);
+      if (firstAuthorized) {
+        setActiveWorkspace(firstAuthorized._id);
+      }
+    }
+  }, [isLoading, isAuthorized, workspaces, setActiveWorkspace]);
 
   if (isLoading) {
     return (
@@ -17,14 +31,15 @@ export function InstitutionAdminRoute({ children }) {
     return <Navigate to="/" replace />;
   }
 
-  // Verify the user is an authorized HOD or Coordinator in the currently active workspace
-  const currentWorkspace = workspaces.find((ws) => ws._id === activeWorkspace);
-  const isHod = currentWorkspace?.isHod;
-  const isCoordinator = currentWorkspace?.isCoordinator;
-
-  // Allow access if they are either an HOD OR a Coordinator
-  if (activeWorkspace === 'PERSONAL' || (!isHod && !isCoordinator)) {
-    return <Navigate to="/dashboard" replace />;
+  // If they are on PERSONAL but they actually own an institution workspace, auto-switch them!
+  if (!isAuthorized) {
+    const firstAuthorized = workspaces.find(ws => ws.isHod || ws.isCoordinator);
+    if (firstAuthorized) {
+      // Instead of redirecting to dashboard, they just need their workspace fixed
+      return <Navigate replace to="/dashboard"/>; 
+      // Note: We route to dashboard because React components shouldn't directly mutate context in the render phase, but they can click the workspace switcher there.
+    }
+    return <Navigate replace to="/dashboard"/>;
   }
 
   return <>{children}</>;

@@ -39,8 +39,8 @@ export const NotificationProvider = ({ children }) => {
       return response?.data || response || { notifications: [], totalCount: 0, unreadCount: 0 };
     },
     enabled: !!isAuthenticated,
-    refetchInterval: 60000, // poll every 60 seconds
-    refetchOnWindowFocus: true,
+    refetchInterval: 180000, // Poll only every 3 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Keep local state in sync with React Query cache

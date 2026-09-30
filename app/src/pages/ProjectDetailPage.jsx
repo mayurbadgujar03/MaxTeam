@@ -55,7 +55,17 @@ export default function ProjectDetailPage() {
 
   const taskIdFromUrl = searchParams.get("taskId");
 
-  const [activeTab, setActiveTab] = useState("tasks");
+  // Read active tab from URL, default to "tasks"
+  const activeTab = searchParams.get("tab") || "tasks";
+
+  // Update URL without pushing a new history state (prevents breaking the back button)
+  const setActiveTab = (value) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", value);
+      return next;
+    }, { replace: true });
+  };
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [defaultTaskStatus, setDefaultTaskStatus] = useState("todo");
   const [selectedNote, setSelectedNote] = useState(null);
@@ -94,16 +104,12 @@ export default function ProjectDetailPage() {
     queryKey: ["tasks", projectId],
     queryFn: () => tasksApi.getAll(projectId),
     enabled: !!projectId,
-    refetchInterval: 60000,
-    refetchOnWindowFocus: true,
   });
 
   const { data: notesData, isLoading: isNotesLoading } = useQuery({
     queryKey: ["notes", projectId],
     queryFn: () => notesApi.getAll(projectId),
     enabled: !!projectId,
-    refetchInterval: 60000,
-    refetchOnWindowFocus: true,
   });
 
   const updateProjectMutation = useMutation({

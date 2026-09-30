@@ -7,7 +7,19 @@ const AuthContext = createContext(undefined);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeWorkspace, setActiveWorkspace] = useState('PERSONAL');
+  const [activeWorkspace, setActiveWorkspaceState] = useState(() => {
+    return localStorage.getItem('activeWorkspace') || 'PERSONAL';
+  });
+
+  const setActiveWorkspace = (workspaceId) => {
+    setActiveWorkspaceState(workspaceId);
+    if (workspaceId) {
+      localStorage.setItem('activeWorkspace', workspaceId);
+    } else {
+      localStorage.removeItem('activeWorkspace');
+    }
+  };
+
   const [workspaces, setWorkspaces] = useState([]);
 
   const refreshUser = useCallback(async () => {
@@ -69,6 +81,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await authApi.logout();
     setUser(null);
+    localStorage.removeItem('activeWorkspace');
+    localStorage.removeItem('isLoggedIn');
   };
 
   return (

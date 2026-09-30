@@ -32,7 +32,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
+      gcTime: 15 * 60 * 1000, // Keep in memory for 15 minutes
       retry: 1,
+      refetchOnWindowFocus: false, // CRITICAL: Prevent DDOS when users switch tabs
+      refetchOnReconnect: false,   // CRITICAL: Prevent thundering herd on campus Wi-Fi
     },
   },
 });
