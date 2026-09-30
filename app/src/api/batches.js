@@ -38,4 +38,9 @@ export const batchesApi = {
     const response = await apiClient.patch(`/batch/${batchId}/coordinators`, { coordinatorEmails });
     return response;
   },
+
+  async updateWindow(batchId, payload) {
+    const response = await apiClient.patch(`/batch/${batchId}/window`, payload);
+    return response;
+  },
 };

@@ -1,20 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock, XCircle, Users, Loader2, Calendar, FolderKanban, Search } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, Users, Loader2, Calendar, FolderKanban, Search, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { attendanceApi } from "@/api/attendance";
+import { batchesApi } from "@/api/batches";
 
-export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
+export default function BatchAttendanceGrid({ batchId, batch, isHod, isCoordinator }) {
   const [selectedWeek, setSelectedWeek] = useState("1");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showWindowSettings, setShowWindowSettings] = useState(false);
+  const [windowForm, setWindowForm] = useState({ startDate: '', startTime: '', endDate: '', endTime: '' });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Determine authority tier (HOD takes priority if user is both)
   const userTier = isHod ? "HOD" : isCoordinator ? "COORDINATOR" : null;
+
+  const { data: batchDetailsData } = useQuery({
+    queryKey: ["batch-details", batchId],
+    queryFn: () => batchesApi.getBatchDetails(batchId),
+    enabled: !!batchId,
+  });
+
+  const currentBatch = batch || batchDetailsData?.data?.data || batchDetailsData?.data || null;
+
+  useEffect(() => {
+    const windowForWeek = currentBatch?.weeklyWindows?.find(
+      (w) => w.weekNumber === Number(selectedWeek)
+    );
+    if (windowForWeek?.start && windowForWeek?.end) {
+      const start = new Date(windowForWeek.start);
+      const end = new Date(windowForWeek.end);
+      const pad = (n) => String(n).padStart(2, "0");
+      const toLocalDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const toLocalTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      setWindowForm({
+        startDate: toLocalDate(start),
+        startTime: toLocalTime(start),
+        endDate: toLocalDate(end),
+        endTime: toLocalTime(end),
+      });
+    } else {
+      setWindowForm({ startDate: '', startTime: '', endDate: '', endTime: '' });
+    }
+  }, [selectedWeek, currentBatch?.weeklyWindows]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["batchAttendance", batchId, selectedWeek],
@@ -23,7 +55,13 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
   });
 
   const markMutation = useMutation({
-    mutationFn: ({ records }) => attendanceApi.markBatchAttendance(batchId, records, userTier),
+    mutationFn: ({ records, tier, weekNumber }) =>
+      attendanceApi.markBatchAttendance(
+        batchId,
+        records,
+        tier || userTier,
+        weekNumber !== undefined ? weekNumber : Number(selectedWeek)
+      ),
     onSuccess: () => {
       toast({ title: `${userTier} Attendance saved successfully` });
       queryClient.invalidateQueries({ queryKey: ["batchAttendance", batchId, selectedWeek] });
@@ -35,6 +73,41 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
         variant: "destructive",
       }),
   });
+
+  const updateWindowMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await batchesApi.updateWindow(batchId, payload);
+      return res?.data || res;
+    },
+    onSuccess: () => {
+      toast({ title: "Attendance Window Updated" });
+      setShowWindowSettings(false);
+      queryClient.invalidateQueries({ queryKey: ["batch", batchId] });
+      queryClient.invalidateQueries({ queryKey: ["batch-details", batchId] });
+    },
+    onError: (error) =>
+      toast({
+        title: "Failed to update window",
+        description: error.response?.data?.message || error.message || "Failed to update window",
+        variant: "destructive",
+      }),
+  });
+
+  const handleSaveWindow = () => {
+    if (!windowForm.startDate || !windowForm.startTime || !windowForm.endDate || !windowForm.endTime) {
+      return toast({ title: "Please fill all date and time fields", variant: "destructive" });
+    }
+    const payload = {
+      weekNumber: Number(selectedWeek),
+      windowStart: new Date(`${windowForm.startDate}T${windowForm.startTime}`).toISOString(),
+      windowEnd: new Date(`${windowForm.endDate}T${windowForm.endTime}`).toISOString(),
+    };
+    updateWindowMutation.mutate(payload);
+  };
+
+  const handleClearWindow = () => {
+    updateWindowMutation.mutate({ weekNumber: Number(selectedWeek), windowStart: null, windowEnd: null });
+  };
 
   const handleBulkApproveTeam = (project) => {
     // Find the milestone ID for this week
@@ -67,7 +140,7 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
       });
     }
 
-    markMutation.mutate({ records });
+    markMutation.mutate({ records, tier: userTier, weekNumber: Number(selectedWeek) });
   };
 
   const handleSingleStudentMark = (project, member, status) => {
@@ -82,7 +155,7 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
       status: status
     }];
 
-    markMutation.mutate({ records });
+    markMutation.mutate({ records, tier: userTier, weekNumber: Number(selectedWeek) });
   };
 
   const projects = data?.data?.projects || [];
@@ -154,8 +227,78 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
               ))}
             </SelectContent>
           </Select>
+
+          {userTier === "COORDINATOR" && (
+            <button
+              onClick={() => setShowWindowSettings(!showWindowSettings)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            >
+              <Clock className="h-3.5 w-3.5" />
+              Time Window
+            </button>
+          )}
         </div>
       </div>
+
+      {showWindowSettings && userTier === "COORDINATOR" && (
+        <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-lg flex flex-col sm:flex-row gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">
+                Start Date & Time (Week {selectedWeek})
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  className="h-8 text-xs"
+                  type="date"
+                  value={windowForm.startDate}
+                  onChange={(e) => setWindowForm({ ...windowForm, startDate: e.target.value })}
+                />
+                <Input
+                  className="h-8 text-xs w-[120px]"
+                  type="time"
+                  value={windowForm.startTime}
+                  onChange={(e) => setWindowForm({ ...windowForm, startTime: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">
+                End Date & Time (Week {selectedWeek})
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  className="h-8 text-xs"
+                  type="date"
+                  value={windowForm.endDate}
+                  onChange={(e) => setWindowForm({ ...windowForm, endDate: e.target.value })}
+                />
+                <Input
+                  className="h-8 text-xs w-[120px]"
+                  type="time"
+                  value={windowForm.endTime}
+                  onChange={(e) => setWindowForm({ ...windowForm, endTime: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleClearWindow}
+              className="px-3 py-1.5 text-xs font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 rounded dark:bg-slate-800 dark:border-slate-700"
+            >
+              Clear
+            </button>
+            <button
+              onClick={handleSaveWindow}
+              disabled={updateWindowMutation.isPending}
+              className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 rounded flex items-center gap-1.5"
+            >
+              <Save className="h-3.5 w-3.5" /> Save
+            </button>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="p-12 text-center text-slate-500 bg-card rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-2">

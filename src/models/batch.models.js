@@ -29,6 +29,13 @@ const batchSchema = new Schema(
       ref: "User",
       required: true,
     },
+    weeklyWindows: [
+      {
+        weekNumber: { type: Number, required: true },
+        start: { type: Date, required: true },
+        end: { type: Date, required: true },
+      },
+    ],
   },
   {
     timestamps: true,

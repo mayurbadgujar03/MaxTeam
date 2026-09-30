@@ -277,6 +277,47 @@ const exportBatchCSV = asyncHandler(async (req, res) => {
   return res.status(200).send(csvContent);
 });
 
+const updateCoordinatorWindow = asyncHandler(async (req, res) => {
+  const { batchId } = req.params;
+  const { weekNumber, windowStart, windowEnd } = req.body;
+  const userId = req.user._id;
+
+  if (!weekNumber) return res.status(400).json(new ApiError(400, "weekNumber is required"));
+
+  const batch = await Batch.findById(batchId);
+  if (!batch) return res.status(404).json(new ApiError(404, "Batch not found"));
+
+  const workspace = await InstitutionWorkspace.findById(batch.workspaceId).lean();
+  const isHod = workspace?.authorizedHods?.some(h => h.toString() === userId.toString());
+  const isCoord = batch.coordinators?.some(c => c.toString() === userId.toString());
+
+  if (!isHod && !isCoord) {
+    return res.status(403).json(new ApiError(403, "Unauthorized"));
+  }
+
+  if (!batch.weeklyWindows) {
+    batch.weeklyWindows = [];
+  }
+
+  const weekIndex = batch.weeklyWindows.findIndex(w => w.weekNumber === Number(weekNumber));
+
+  if (windowStart && windowEnd) {
+    // Set or update window for this specific week
+    if (weekIndex > -1) {
+      batch.weeklyWindows[weekIndex].start = new Date(windowStart);
+      batch.weeklyWindows[weekIndex].end = new Date(windowEnd);
+    } else {
+      batch.weeklyWindows.push({ weekNumber: Number(weekNumber), start: new Date(windowStart), end: new Date(windowEnd) });
+    }
+  } else {
+    // Clear window if null dates are passed
+    if (weekIndex > -1) batch.weeklyWindows.splice(weekIndex, 1);
+  }
+
+  await batch.save();
+  return res.status(200).json(new ApiResponse(200, batch, `Window updated for Week ${weekNumber}`));
+});
+
 export {
   createBatch,
   getWorkspaceBatches,
@@ -284,5 +325,6 @@ export {
   updateBatchCoordinators,
   getBatchById,
   getBatchStats,
-  exportBatchCSV
+  exportBatchCSV,
+  updateCoordinatorWindow
 };

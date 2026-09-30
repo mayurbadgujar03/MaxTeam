@@ -13,8 +13,12 @@ export const attendanceApi = {
     const response = await apiClient.get(`/attendance/batch/${batchId}?week=${weekNumber}`);
     return response;
   },
-  markBatchAttendance: async (batchId, records, tier) => {
-    const response = await apiClient.post(`/attendance/batch/${batchId}`, { records, tier });
+  markBatchAttendance: async (batchId, records, tier, weekNumber) => {
+    const payload =
+      typeof records === "object" && !Array.isArray(records)
+        ? records
+        : { records, tier, weekNumber };
+    const response = await apiClient.post(`/attendance/batch/${batchId}`, payload);
     return response;
   },
 };

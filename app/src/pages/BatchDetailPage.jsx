@@ -460,6 +460,7 @@ export default function BatchDetailPage() {
     <TabsContent value="attendance" className="mt-0">
       <BatchAttendanceGrid
         batchId={batchId}
+        batch={batch}
         isCoordinator={isCoordinator}
         isHod={isHod}
       />

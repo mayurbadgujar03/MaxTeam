@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { Attendance } from "../models/attendance.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { Batch } from "../models/batch.models.js";
 
 export const markMentorAttendance = asyncHandler(async (req, res) => {
   const { projectId, milestoneId } = req.params;
@@ -107,7 +108,7 @@ export const getBatchWeekAttendance = asyncHandler(async (req, res) => {
 
 export const markBatchAttendance = asyncHandler(async (req, res) => {
   const { batchId } = req.params;
-  const { records, tier } = req.body; // tier: 'COORDINATOR' | 'HOD'
+  const { records, tier, weekNumber } = req.body; // tier: 'COORDINATOR' | 'HOD'
 
   if (!records || !Array.isArray(records)) {
     return res.status(400).json(new ApiError(400, "Records array is required"));
@@ -123,6 +124,25 @@ export const markBatchAttendance = asyncHandler(async (req, res) => {
   }
   if (tier === "COORDINATOR" && !req.isBatchCoordinator && !req.isHod) {
     return res.status(403).json(new ApiError(403, "Only Coordinators or HODs can submit Coordinator-tier attendance"));
+  }
+
+  if (tier === "COORDINATOR") {
+    if (!weekNumber) return res.status(400).json(new ApiError(400, "weekNumber is required for Coordinator marking"));
+
+    const batch = await Batch.findById(batchId).select("weeklyWindows");
+    const window = batch?.weeklyWindows?.find(w => w.weekNumber === Number(weekNumber));
+
+    if (!window) {
+      return res.status(403).json(new ApiError(403, `No attendance window configured for Week ${weekNumber}. Please configure it first.`));
+    }
+
+    const now = new Date();
+    if (now < new Date(window.start)) {
+      return res.status(403).json(new ApiError(403, `Week ${weekNumber} window opens on ${new Date(window.start).toLocaleString()}`));
+    }
+    if (now > new Date(window.end)) {
+      return res.status(403).json(new ApiError(403, `Week ${weekNumber} window closed on ${new Date(window.end).toLocaleString()}`));
+    }
   }
 
   const bulkOps = records.map((record) => {
