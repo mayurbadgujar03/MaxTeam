@@ -39,74 +39,11 @@ import {
   GitBranch,
   Search,
   Pin,
-  Presentation,
   BookOpen,
-  ExternalLink,
   Calendar,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-/**
- * Sanitizes embed URLs for Canva and Overleaf.
- * - Canva HTML blob: extracts the src URL from pasted <iframe> markup.
- * - Canva shortlink (canva.link): returns 'INVALID_SHORTLINK' — CORS blocks resolution.
- * - Canva standard/edit link: strips query params, forces /view?embed format.
- * - Overleaf: passes through unchanged (fully iframe-friendly).
- */
-const sanitizeEmbedUrl = (url, type) => {
-  if (!url) return null;
-  const cleanUrl = url.trim();
-
-  if (type === 'canva') {
-    // Scenario 1: They pasted the entire HTML embed blob
-    if (cleanUrl.includes('<iframe')) {
-      const match = cleanUrl.match(/src="([^"]+)"/);
-      if (match && match[1]) return match[1];
-    }
-
-    // Scenario 2: They pasted the blocked shortlink
-    if (cleanUrl.includes('canva.link')) {
-      return 'INVALID_SHORTLINK';
-    }
-
-    // Scenario 3: Standard View or Edit link
-    if (cleanUrl.includes('canva.com/design')) {
-      const baseUrl = cleanUrl.split('?')[0]; // Strip existing tracking parameters
-
-      // Force it into the proper embed format
-      if (baseUrl.endsWith('/view') || baseUrl.endsWith('/edit')) {
-        return baseUrl.replace('/edit', '/view') + '?embed';
-      }
-      return baseUrl + '/view?embed'; // Fallback
-    }
-  }
-
-  if (type === 'overleaf') {
-    return cleanUrl; // Overleaf handles itself
-  }
-
-  return cleanUrl;
-};
-
-const parseDocumentUrl = (url) => {
-  if (!url) return { type: 'empty', url: null };
-  const cleanUrl = url.trim();
-
-  // Scenario 1: Google Drive File (PDF/Image) or Google Doc/Sheet/Slide
-  if (cleanUrl.includes('drive.google.com/file/d/') || cleanUrl.includes('docs.google.com')) {
-    // Strip anything after /view or /edit and append /preview for iframe compatibility
-    const baseUrl = cleanUrl.split('/view')[0].split('/edit')[0];
-    return { type: 'embed', url: `${baseUrl}/preview` };
-  }
-
-  // Scenario 2: Overleaf (Blocked by CSP)
-  if (cleanUrl.includes('overleaf.com')) {
-    return { type: 'portal', url: cleanUrl, portalName: 'Overleaf Documentation' };
-  }
-
-  // Scenario 3: Catch-all for Notion, OneDrive, Dropbox, etc.
-  return { type: 'portal', url: cleanUrl, portalName: 'External Document' };
-};
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -129,8 +66,6 @@ export default function ProjectDetailPage() {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [projectGithubRepoUrl, setProjectGithubRepoUrl] = useState("");
-  const [projectCanvaUrl, setProjectCanvaUrl] = useState("");
-  const [projectOverleafUrl, setProjectOverleafUrl] = useState("");
 
   const {
     data: projectData,
@@ -176,17 +111,10 @@ export default function ProjectDetailPage() {
       if (!projectName?.trim()) {
         throw new Error("Project name is required");
       }
-      if (projectCanvaUrl && projectCanvaUrl.includes('canva.link')) {
-        throw new Error(
-          "Canva shortlinks are not allowed. Please use the Smart URL from the Embed menu."
-        );
-      }
       return projectsApi.update(projectId, {
         name: projectName.trim(),
         description: projectDescription.trim(),
         githubRepoUrl: projectGithubRepoUrl.trim(),
-        canvaUrl: projectCanvaUrl.trim(),
-        overleafUrl: projectOverleafUrl.trim(),
       });
     },
     onSuccess: () => {
@@ -236,8 +164,6 @@ export default function ProjectDetailPage() {
       setProjectName(project.name);
       setProjectDescription(project.description || "");
       setProjectGithubRepoUrl(project.githubRepoUrl || "");
-      setProjectCanvaUrl(project.canvaUrl || "");
-      setProjectOverleafUrl(project.overleafUrl || "");
     }
   }, [project]);
 
@@ -302,10 +228,6 @@ export default function ProjectDetailPage() {
             <TabsTrigger value="notes" className="gap-2 shrink-0">
               <FileText className="h-4 w-4" />
               Project Notes
-            </TabsTrigger>
-            <TabsTrigger value="presentations" className="gap-2 shrink-0">
-              <Presentation className="h-4 w-4" />
-              Presentations
             </TabsTrigger>
             <TabsTrigger value="documentation" className="gap-2 shrink-0">
               <BookOpen className="h-4 w-4" />
@@ -480,73 +402,6 @@ export default function ProjectDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="presentations" className="mt-6">
-          {project?.canvaUrl ? (
-            sanitizeEmbedUrl(project.canvaUrl, 'canva') === 'INVALID_SHORTLINK' ? (
-              <Card className="border-destructive/30 w-full">
-                <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
-                  <div className="rounded-full bg-destructive/10 p-4">
-                    <Presentation className="h-8 w-8 text-destructive" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-destructive">Shortlink Blocked by Canva</h3>
-                  <p className="text-sm text-muted-foreground text-center max-w-md">
-                    Canva does not allow shortlinks (<code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">canva.link</code>) in external apps.
-                    Please go to{" "}
-                    {canManageProject ? (
-                      <button
-                        onClick={() => setActiveTab("settings")}
-                        className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                      >
-                        Project Settings
-                      </button>
-                    ) : (
-                      <span className="font-medium">Project Settings</span>
-                    )}{" "}
-                    and paste the full "View Only" link instead.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    In Canva: <strong>Share → Collaboration Link → Anyone with the link: Can view</strong> → Copy the full URL.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="overflow-hidden w-full">
-                <CardContent className="p-0 w-full overflow-hidden">
-                  <iframe
-                    src={sanitizeEmbedUrl(project.canvaUrl, 'canva')}
-                    title="Canva Presentation"
-                    className="w-full max-w-full border-0 rounded-lg"
-                    style={{ height: '600px' }}
-                    allowFullScreen
-                  />
-                </CardContent>
-              </Card>
-            )
-          ) : (
-            <Card className="w-full">
-              <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 py-12 sm:py-20 gap-3">
-                <div className="rounded-full bg-muted p-4">
-                  <Presentation className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-                <h3 className="text-lg font-medium">No Presentation Linked Yet</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  Add a Canva presentation URL in{" "}
-                  {canManageProject ? (
-                    <button
-                      onClick={() => setActiveTab("settings")}
-                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                    >
-                      Project Settings
-                    </button>
-                  ) : (
-                    <span className="font-medium">Project Settings</span>
-                  )}{" "}
-                  to embed your slides here.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
 
         <TabsContent value="documentation" className="mt-6">
           <DocumentHubTab project={project} canManageProject={canManageProject} />
@@ -611,42 +466,6 @@ export default function ProjectDetailPage() {
                   </p>
                 </div>
 
-                {/* Presentations – Canva URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="canva-url" className="flex items-center gap-2">
-                    <Presentation className="h-4 w-4 text-muted-foreground" />
-                    Canva Presentation URL
-                  </Label>
-                  <Input
-                    id="canva-url"
-                    placeholder="https://www.canva.com/design/.../view"
-                    value={projectCanvaUrl}
-                    onChange={(e) => setProjectCanvaUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    In Canva: <strong>Share → Scroll down to Embed → Generate Embed URL → Copy the Smart URL.</strong>{" "}
-                    You can also paste the full HTML embed code — the URL will be extracted automatically.
-                    <strong className="text-destructive"> Do not use shortlinks (canva.link).</strong>
-                  </p>
-                </div>
-
-                {/* Documentation – URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="overleaf-url" className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    Project Report / Documentation URL
-                  </Label>
-                  <Input
-                    id="overleaf-url"
-                    type="url"
-                    placeholder="https://drive.google.com/... or https://www.overleaf.com/read/..."
-                    value={projectOverleafUrl}
-                    onChange={(e) => setProjectOverleafUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Paste a Google Drive link (PDF/Doc), Google Docs URL, or Overleaf link. Google links will be embedded directly.
-                  </p>
-                </div>
 
                 <div className="flex items-center gap-4">
                   <Button
