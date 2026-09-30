@@ -68,6 +68,21 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
     markMutation.mutate({ records });
   };
 
+  const handleSingleStudentMark = (project, member, status) => {
+    const milestone = project.milestones?.find((m) => m.weekNumber === parseInt(selectedWeek));
+    if (!milestone) return toast({ title: "No milestone found", variant: "destructive" });
+
+    // Send an array of exactly ONE record to leverage the existing backend logic
+    const records = [{
+      projectId: project._id,
+      milestoneId: milestone._id,
+      studentId: member.user?._id || member._id,
+      status: status
+    }];
+
+    markMutation.mutate({ records });
+  };
+
   const projects = data?.data?.projects || [];
   const attendances = data?.data?.attendances || [];
 
@@ -184,11 +199,10 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
                       variant={isTeamFullyApproved ? "secondary" : "default"}
                       disabled={isTeamFullyApproved || markMutation.isPending || !milestone}
                       onClick={() => handleBulkApproveTeam(project)}
-                      className={`text-xs font-semibold ${
-                        isTeamFullyApproved
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                          : ""
-                      }`}
+                      className={`text-xs font-semibold ${isTeamFullyApproved
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                        : ""
+                        }`}
                     >
                       {markMutation.isPending ? (
                         <>
@@ -232,7 +246,29 @@ export default function BatchAttendanceGrid({ batchId, isHod, isCoordinator }) {
 
                         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                           <StatusBadge label="Mentor" mark={record.mentorMark} />
-                          <StatusBadge label="Coord" mark={record.coordinatorMark} />
+
+                          {userTier === "COORDINATOR" ? (
+                            <div className="flex items-center gap-1 border-x px-2 mx-1 border-slate-200 dark:border-slate-700">
+                              <span className="text-[10px] font-semibold text-slate-500 mr-1 uppercase">Coord:</span>
+                              <button
+                                onClick={() => handleSingleStudentMark(project, member, "PRESENT")}
+                                disabled={markMutation.isPending}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${record.coordinatorMark === 'PRESENT' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-green-100 dark:bg-slate-800 dark:text-slate-300'}`}
+                              >
+                                P
+                              </button>
+                              <button
+                                onClick={() => handleSingleStudentMark(project, member, "ABSENT")}
+                                disabled={markMutation.isPending}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${record.coordinatorMark === 'ABSENT' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-red-100 dark:bg-slate-800 dark:text-slate-300'}`}
+                              >
+                                A
+                              </button>
+                            </div>
+                          ) : (
+                            <StatusBadge label="Coord" mark={record.coordinatorMark} />
+                          )}
+
                           <StatusBadge label="HOD" mark={record.hodMark} />
                         </div>
                       </div>
