@@ -168,14 +168,14 @@ const googleCallback = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+      domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
       maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+      domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
       maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
@@ -201,7 +201,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+    domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
     expires: new Date(0),
     maxAge: 0,
   });
@@ -209,7 +209,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+    domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
     expires: new Date(0),
     maxAge: 0,
   });
@@ -244,14 +244,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+      domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
       maxAge: parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRY, 15 * 60 * 1000),
     };
     const refreshOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      domain: process.env.NODE_ENV === "production" ? ".mayurbadgujar.me" : undefined,
+      domain: process.env.NODE_ENV === "production" ? (process.env.COOKIE_DOMAIN || ".mayurbadgujar.me") : undefined,
       maxAge: parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY, 7 * 24 * 60 * 60 * 1000),
     };
 
