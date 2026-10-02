@@ -16,6 +16,19 @@ const createBatch = asyncHandler(async (req, res) => {
       .json(new ApiError(400, "name, department, and workspaceId are required"));
   }
 
+  const workspace = await InstitutionWorkspace.findById(workspaceId).lean();
+  if (!workspace) {
+    return res.status(404).json(new ApiError(404, "Workspace not found"));
+  }
+
+  const isHod = workspace.authorizedHods?.some(
+    (hodId) => hodId.toString() === req.user._id.toString()
+  ) || false;
+
+  if (!isHod) {
+    return res.status(403).json(new ApiError(403, "Only HODs can create batches"));
+  }
+
   const batch = await Batch.create({
     name,
     department,
@@ -45,6 +58,17 @@ const getWorkspaceBatches = asyncHandler(async (req, res) => {
   const isHod = workspace.authorizedHods?.some(
     (hodId) => hodId.toString() === userId.toString()
   ) || false;
+
+  const isCoordinator = await Batch.exists({
+    workspaceId,
+    coordinators: userId,
+  });
+
+  if (!isHod && !isCoordinator) {
+    return res
+      .status(403)
+      .json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can view workspace batches"));
+  }
 
   const query = { workspaceId };
   if (!isHod) {
@@ -169,11 +193,11 @@ const getBatchById = asyncHandler(async (req, res) => {
   ) || false;
 
   const isCoordinator = batch.coordinators?.some(
-    (c) => c._id.toString() === userId.toString()
+    (c) => (c._id ? c._id.toString() : c.toString()) === userId.toString()
   ) || false;
 
   if (!isHod && !isCoordinator) {
-    return res.status(403).json(new ApiError(403, "You do not have access to this batch"));
+    return res.status(403).json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can access this batch"));
   }
 
   return res
@@ -183,9 +207,23 @@ const getBatchById = asyncHandler(async (req, res) => {
 
 const getBatchStats = asyncHandler(async (req, res) => {
   const { batchId } = req.params;
+  const userId = req.user._id;
 
   if (!batchId) {
     return res.status(400).json(new ApiError(400, "batchId is required"));
+  }
+
+  const batch = await Batch.findById(batchId).lean();
+  if (!batch) {
+    return res.status(404).json(new ApiError(404, "Batch not found"));
+  }
+
+  const workspace = await InstitutionWorkspace.findById(batch.workspaceId).lean();
+  const isHod = workspace?.authorizedHods?.some((h) => h.toString() === userId.toString()) || false;
+  const isCoordinator = batch.coordinators?.some((c) => (c._id ? c._id.toString() : c.toString()) === userId.toString()) || false;
+
+  if (!isHod && !isCoordinator) {
+    return res.status(403).json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can view batch stats"));
   }
 
   const projects = await Project.find({ batchId, deletedAt: null }).lean();
@@ -217,6 +255,7 @@ const getBatchStats = asyncHandler(async (req, res) => {
 
 const exportBatchCSV = asyncHandler(async (req, res) => {
   const { batchId } = req.params;
+  const userId = req.user._id;
 
   if (!batchId) {
     return res.status(400).json(new ApiError(400, "batchId is required"));
@@ -225,6 +264,14 @@ const exportBatchCSV = asyncHandler(async (req, res) => {
   const batch = await Batch.findById(batchId).lean();
   if (!batch) {
     return res.status(404).json(new ApiError(404, "Batch not found"));
+  }
+
+  const workspace = await InstitutionWorkspace.findById(batch.workspaceId).lean();
+  const isHod = workspace?.authorizedHods?.some((h) => h.toString() === userId.toString()) || false;
+  const isCoordinator = batch.coordinators?.some((c) => (c._id ? c._id.toString() : c.toString()) === userId.toString()) || false;
+
+  if (!isHod && !isCoordinator) {
+    return res.status(403).json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can export batch data"));
   }
 
   const projects = await Project.find({ batchId, deletedAt: null })

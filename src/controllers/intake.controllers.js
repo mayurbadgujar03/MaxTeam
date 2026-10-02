@@ -40,18 +40,11 @@ const processBatchIntake = asyncHandler(async (req, res) => {
   // ─── 1. Resolve Mentor & Ownership ───
   const mentorEmailNormalized = mentor.email.toLowerCase().trim();
   const existingMentor = await User.findOne({ email: mentorEmailNormalized });
-  let resolvedMentorId;
-  let mentorNeedsGhostInvite = false;
 
-  if (existingMentor) {
-    resolvedMentorId = existingMentor._id;
-  } else {
-    // Mentor not registered yet — fall back to batch coordinator/creator as project owner
-    resolvedMentorId = batch.coordinators?.[0] || batch.createdBy;
-    mentorNeedsGhostInvite = true;
-  }
+  // The createdBy field can remain the Batch Coordinator for record-keeping
+  const projectCreatorId = batch.coordinators?.[0] || batch.createdBy || existingMentor?._id;
 
-  if (!resolvedMentorId) {
+  if (!projectCreatorId) {
     return res
       .status(400)
       .json(new ApiError(400, "Could not resolve a project owner for this batch"));
@@ -61,7 +54,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
   const project = await Project.create({
     name,
     description,
-    createdBy: resolvedMentorId,
+    createdBy: projectCreatorId,
     workspaceId: workspaceId || null,
     batchId: batchId || null,
     groupNumber: groupNumber ? Number(groupNumber) : null,
@@ -70,14 +63,15 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     milestones: generateDynamicTimeline(startDate, endDate),
   });
 
-  await ProjectMember.create({
-    user: resolvedMentorId,
-    project: project._id,
-    role: UserRolesEnum.ADMIN,
-  });
-
-  // Ghost-invite mentor if unregistered
-  if (mentorNeedsGhostInvite) {
+  // Assign ONLY the actual mentor to the project team:
+  if (existingMentor) {
+    await ProjectMember.create({
+      user: existingMentor._id,
+      project: project._id,
+      role: UserRolesEnum.ADMIN,
+    });
+  } else {
+    // Unregistered Mentor: create PreInvitation only (Do NOT add HOD/Coordinator to ProjectMember)
     await PreInvitation.create({
       email: mentorEmailNormalized,
       projectId: project._id,

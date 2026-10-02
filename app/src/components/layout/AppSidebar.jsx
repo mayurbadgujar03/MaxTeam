@@ -27,6 +27,11 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
       .toUpperCase()
     : user?.username?.charAt(0).toUpperCase() || 'U';
 
+  const currentWs = workspaces?.find((ws) => ws._id === activeWorkspace);
+  const isHod = !!currentWs?.isHod;
+  const isCoordinator = !!currentWs?.isCoordinator;
+  const canAccessBatches = activeWorkspace !== 'PERSONAL' && (isHod || isCoordinator);
+
   return (
     <>
       {/* Dark overlay for mobile when sidebar is open */}
@@ -99,8 +104,7 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
             </NavLink>
           ))}
 
-          {activeWorkspace !== 'PERSONAL' && 
-           (workspaces.find(ws => ws._id === activeWorkspace)?.isHod || workspaces.find(ws => ws._id === activeWorkspace)?.isCoordinator) && (
+          {canAccessBatches && (
             <NavLink
               to="/batches"
               className={cn(

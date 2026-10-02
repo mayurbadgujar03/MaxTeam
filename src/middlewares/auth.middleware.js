@@ -87,8 +87,12 @@ export const validateBatchAccess = (allowedRoles = ['hod', 'coordinator']) =>
     const batch = await Batch.findById(batchId).populate("workspaceId");
     if (!batch) return res.status(404).json(new ApiError(404, "Batch not found"));
 
-    const isCoordinator = batch.coordinators?.some(c => c.toString() === userId.toString());
-    const isHod = batch.workspaceId?.authorizedHods?.some(hod => hod.toString() === userId.toString());
+    const isCoordinator = batch.coordinators?.some(
+      (c) => (c._id ? c._id.toString() : c.toString()) === userId.toString()
+    );
+    const isHod = batch.workspaceId?.authorizedHods?.some(
+      (hod) => (hod._id ? hod._id.toString() : hod.toString()) === userId.toString()
+    );
 
     req.isBatchCoordinator = isCoordinator;
     req.isHod = isHod;
@@ -96,7 +100,7 @@ export const validateBatchAccess = (allowedRoles = ['hod', 'coordinator']) =>
     if (allowedRoles.includes('hod') && isHod) return next();
     if (allowedRoles.includes('coordinator') && isCoordinator) return next();
 
-    return res.status(403).json(new ApiError(403, "You do not have permission to modify this batch"));
+    return res.status(403).json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can access this batch"));
   });
 
 export { isLoggedIn, validateProjectPermission, isSuperAdmin };

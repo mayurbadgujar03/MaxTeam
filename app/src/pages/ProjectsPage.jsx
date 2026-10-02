@@ -50,24 +50,25 @@ export default function ProjectsPage() {
     }
   }, [socket, queryClient, activeWorkspace]);
 
+  const currentWs = workspaces?.find(ws => ws._id === activeWorkspace);
+  const isHod = !!currentWs?.isHod;
+  const isCoordinator = !!currentWs?.isCoordinator;
+  const isWorkspaceAdmin = activeWorkspace !== 'PERSONAL' && (isHod || isCoordinator);
+
+  const activeScope = isWorkspaceAdmin ? scopeTab : 'my';
+
   const { data: projectsData, isLoading } = useQuery({
-    queryKey: ['projects', activeWorkspace],
-    queryFn: () => projectsApi.getAll(activeWorkspace),
+    queryKey: ['projects', activeWorkspace, activeScope],
+    queryFn: () => projectsApi.getAll(activeWorkspace, activeScope),
   });
 
   const projects = projectsData?.data || [];
 
-  const isHod = workspaces?.find(ws => ws._id === activeWorkspace)?.isHod || false;
-  // User is coordinator/admin if they see projects where they are not a member
-  const isWorkspaceAdmin = activeWorkspace !== 'PERSONAL' && (
-    isHod || projects.some(p => !p.members?.some(m => m.user?._id === user?._id))
-  );
-
-  // Filter projects by direct membership if 'My Projects' tab is active
+  // Filter projects by direct membership if 'My Projects' tab is active or user is not a workspace admin
   const isMember = (project) => project.members?.some(m => m.user?._id === user?._id);
-  const displayedProjects = isWorkspaceAdmin && scopeTab === 'my'
-    ? projects.filter(isMember)
-    : projects;
+  const displayedProjects = isWorkspaceAdmin
+    ? (scopeTab === 'my' ? projects.filter(isMember) : projects)
+    : projects.filter(isMember);
 
   // Group projects by Batch profile
   const groupedProjects = displayedProjects.reduce((acc, project) => {
@@ -282,7 +283,7 @@ export default function ProjectsPage() {
             </Card>
           ))}
         </div>
-      ) : projects.length > 0 ? (
+      ) : displayedProjects.length > 0 ? (
         activeWorkspace === 'PERSONAL' ? (
           /* PERSONAL workspace projects render flat */
           viewMode === 'grid' ? (

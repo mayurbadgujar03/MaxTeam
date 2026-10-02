@@ -21,9 +21,12 @@ import mongoose from "mongoose";
 
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { workspaceId } = req.query;
+  const { workspaceId, scope } = req.query;
 
   let isHod = false;
+  let isCoordinator = false;
+  let coordinatorBatchIds = [];
+
   if (workspaceId && workspaceId !== 'PERSONAL') {
     const workspace = await InstitutionWorkspace.findById(workspaceId).lean();
     if (workspace) {
@@ -31,43 +34,64 @@ const getProjects = asyncHandler(async (req, res) => {
         (hodId) => hodId.toString() === userId.toString()
       ) || false;
     }
+
+    const coordinatorBatches = await Batch.find({
+      workspaceId,
+      coordinators: userId,
+    })
+      .select("_id")
+      .lean();
+    coordinatorBatchIds = coordinatorBatches.map((b) => b._id);
+    isCoordinator = coordinatorBatchIds.length > 0;
   }
+
+  // Security check: If requesting all workspace projects, caller MUST be HOD or Coordinator
+  if (scope === 'all') {
+    if (!isHod && !isCoordinator) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "Access denied. Only HODs and Batch Coordinators can view all workspace projects"));
+    }
+  }
+
+  // Find direct project memberships for the user
+  const memberShips = await ProjectMember.find({
+    user: new mongoose.Types.ObjectId(userId),
+    deletedAt: null,
+  })
+    .select("project")
+    .lean();
+  const memberProjectIds = memberShips.map((m) => m.project);
 
   let filter = { deletedAt: null };
 
-  if (isHod) {
-    // HOD has omnipresent access to all projects in this workspace
+  if (workspaceId && workspaceId !== 'PERSONAL') {
     filter.workspaceId = workspaceId;
-  } else {
-    // Standard User / Coordinator / Personal workspace
-    const memberShips = await ProjectMember.find({
-      user: new mongoose.Types.ObjectId(userId),
-    })
-      .select("project")
-      .lean();
-    const memberProjectIds = memberShips.map((m) => m.project);
 
-    let coordinatorBatchIds = [];
-    if (workspaceId && workspaceId !== 'PERSONAL') {
-      const coordinatorBatches = await Batch.find({
-        workspaceId,
-        coordinators: userId,
-      })
-        .select("_id")
-        .lean();
-      coordinatorBatchIds = coordinatorBatches.map((b) => b._id);
-    }
-
-    if (workspaceId && workspaceId !== 'PERSONAL') {
-      filter.workspaceId = workspaceId;
-      filter.$or = [
-        { _id: { $in: memberProjectIds } },
-        { batchId: { $in: coordinatorBatchIds } },
-      ];
+    if (isHod) {
+      // HOD in workspace
+      if (scope === 'my') {
+        filter._id = { $in: memberProjectIds };
+      }
+      // If scope === 'all' or default, HOD sees all workspace projects
+    } else if (isCoordinator) {
+      // Coordinator in workspace
+      if (scope === 'my') {
+        filter._id = { $in: memberProjectIds };
+      } else {
+        filter.$or = [
+          { _id: { $in: memberProjectIds } },
+          { batchId: { $in: coordinatorBatchIds } },
+        ];
+      }
     } else {
-      filter.workspaceId = null;
+      // Regular Mentor / Student / Project Member: strictly direct memberships
       filter._id = { $in: memberProjectIds };
     }
+  } else {
+    // PERSONAL workspace
+    filter.workspaceId = null;
+    filter._id = { $in: memberProjectIds };
   }
 
   const projects = await Project.find(filter)
