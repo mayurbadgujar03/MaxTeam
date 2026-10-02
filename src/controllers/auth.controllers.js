@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { User } from "../models/user.models.js";
 import { PreInvitation } from "../models/preinvitation.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { InstitutionWorkspace } from "../models/workspace.models.js";
 
 import jwt from "jsonwebtoken";
 
@@ -145,12 +146,26 @@ const googleCallback = asyncHandler(async (req, res) => {
       // Activation Hook: Convert Ghost Account Invitations into real memberships
       const pendingInvites = await PreInvitation.find({ email: user.email.toLowerCase() });
       if (pendingInvites.length > 0) {
-        const memberPayloads = pendingInvites.map((invite) => ({
-          user: user._id,
-          project: invite.projectId,
-          role: invite.role,
-        }));
-        await ProjectMember.insertMany(memberPayloads);
+        const projectInvites = pendingInvites.filter((invite) => invite.projectId);
+        const workspaceInvites = pendingInvites.filter((invite) => invite.workspaceId);
+
+        if (projectInvites.length > 0) {
+          const memberPayloads = projectInvites.map((invite) => ({
+            user: user._id,
+            project: invite.projectId,
+            role: invite.role,
+          }));
+          await ProjectMember.insertMany(memberPayloads);
+        }
+
+        if (workspaceInvites.length > 0) {
+          for (const winv of workspaceInvites) {
+            await InstitutionWorkspace.findByIdAndUpdate(winv.workspaceId, {
+              $addToSet: { authorizedHods: user._id },
+            });
+          }
+        }
+
         await PreInvitation.deleteMany({ email: user.email.toLowerCase() });
       }
     }

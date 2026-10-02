@@ -12,7 +12,7 @@ const preInvitationSchema = new Schema(
     projectId: {
       type: Schema.Types.ObjectId,
       ref: "Project",
-      required: true,
+      default: null,
     },
     role: {
       type: String,
@@ -22,6 +22,7 @@ const preInvitationSchema = new Schema(
     workspaceId: {
       type: Schema.Types.ObjectId,
       ref: "InstitutionWorkspace",
+      default: null,
     },
   },
   {
@@ -29,6 +30,7 @@ const preInvitationSchema = new Schema(
   },
 );
 
-preInvitationSchema.index({ email: 1, projectId: 1 }, { unique: true });
+preInvitationSchema.index({ email: 1, projectId: 1 }, { unique: true, sparse: true });
+preInvitationSchema.index({ email: 1, workspaceId: 1 }, { sparse: true });
 
 export const PreInvitation = mongoose.model("PreInvitation", preInvitationSchema);

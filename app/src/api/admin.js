@@ -6,5 +6,12 @@ export const adminApi = {
   },
   async resolveFeedback(feedbackId, status = 'resolved') {
     return apiClient.patch(`/admin/feedback/${feedbackId}`, { status });
-  }
+  },
+  async getWorkspaces() {
+    return apiClient.get('/admin/workspaces');
+  },
+  async createWorkspace(payload) {
+    return apiClient.post('/admin/workspaces', payload);
+  },
 };
+

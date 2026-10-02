@@ -7,7 +7,11 @@ import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { PreInvitation } from "../models/preinvitation.models.js";
 import { Batch } from "../models/batch.models.js";
-import { sendEmail, ghostInvitationMailgenContent } from "../utils/mail.js";
+import {
+  sendEmail,
+  mentorAssignedMailgenContent,
+  leaderProjectCreatedMailgenContent,
+} from "../utils/mail.js";
 import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { generateDynamicTimeline } from "../utils/helpers.js";
 
@@ -26,7 +30,14 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiError(404, "Batch not found"));
   }
 
-  // Resolve mentor: look up by email
+  const formatName = (email) =>
+    email
+      .split("@")[0]
+      .split(".")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  // ─── 1. Resolve Mentor & Ownership ───
   const mentorEmailNormalized = mentor.email.toLowerCase().trim();
   const existingMentor = await User.findOne({ email: mentorEmailNormalized });
   let resolvedMentorId;
@@ -46,6 +57,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
       .json(new ApiError(400, "Could not resolve a project owner for this batch"));
   }
 
+  // ─── 2. Create Project & Assign Mentor Membership ───
   const project = await Project.create({
     name,
     description,
@@ -64,7 +76,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     role: UserRolesEnum.ADMIN,
   });
 
-  // Ghost-invite the mentor if they don't have an account yet
+  // Ghost-invite mentor if unregistered
   if (mentorNeedsGhostInvite) {
     await PreInvitation.create({
       email: mentorEmailNormalized,
@@ -74,37 +86,46 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     });
   }
 
-  // Resolve inviter name for emails
-  let inviterName = "A Coordinator";
-  const ownerUser = await User.findById(resolvedMentorId).lean();
-  if (ownerUser) inviterName = ownerUser.fullname || inviterName;
+  // Resolve base URL and live dashboard link
+  const clientBaseUrl = (
+    process.env.CLIENT_URL ||
+    process.env.CORS_ORIGIN?.split(",")[0]?.trim() ||
+    "https://xugi.in"
+  ).replace(/\/+$/, "");
+  const dashboardUrl = `${clientBaseUrl}/projects/${project._id}`;
 
-  let instituteName = "Your Institution";
-  if (workspaceId) {
-    const workspace = await InstitutionWorkspace.findById(workspaceId);
-    if (workspace) instituteName = workspace.name;
-  }
+  // ─── 3. Send Exactly 1 Email to Mentor ───
+  const mentorDisplayName =
+    mentor.name?.trim() ||
+    existingMentor?.fullname ||
+    formatName(mentor.email);
 
-  const membersToProcess = [
-    { name: leader.name, email: leader.email, role: UserRolesEnum.PROJECT_ADMIN },
-    ...(members || []).map((m) => ({ name: m.name, email: m.email, role: UserRolesEnum.MEMBER })),
-  ];
+  const mentorMailContent = mentorAssignedMailgenContent(
+    mentorDisplayName,
+    project.name,
+    project.groupNumber,
+    dashboardUrl,
+  );
 
+  sendEmail({
+    email: mentorEmailNormalized,
+    subject: `You've been assigned to project ${project.name} on Xugi`,
+    mailgenContent: mentorMailContent,
+  }).catch((err) => console.error("Mentor Assignment Email Failed:", err));
+
+  // ─── 4. Process Members (Excluding Leader) - 0 Emails Sent ───
   const results = { assigned: [], ghosted: [] };
-  const onboardingUrl = `${process.env.CORS_ORIGIN || "http://localhost:5173"}/login`;
+  const teamStatus = [];
+  const leaderEmailNormalized = leader.email.toLowerCase().trim();
 
-  const formatName = (email) =>
-    email
-      .split("@")[0]
-      .split(".")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-
-  for (const entry of membersToProcess) {
-    if (!entry.email) continue;
-    const normalizedEmail = entry.email.toLowerCase().trim();
+  for (const m of (members || [])) {
+    if (!m.email) continue;
+    const normalizedEmail = m.email.toLowerCase().trim();
+    if (normalizedEmail === leaderEmailNormalized) continue; // Exclude leader if duplicate in members array
 
     const existingUser = await User.findOne({ email: normalizedEmail });
+    const isRegistered = !!existingUser;
+    const memberName = m.name?.trim() || (existingUser?.fullname || formatName(m.email));
 
     if (existingUser) {
       const alreadyMember = await ProjectMember.findOne({
@@ -116,7 +137,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
         await ProjectMember.create({
           user: existingUser._id,
           project: project._id,
-          role: entry.role,
+          role: UserRolesEnum.MEMBER,
         });
       }
 
@@ -125,38 +146,76 @@ const processBatchIntake = asyncHandler(async (req, res) => {
       await PreInvitation.create({
         email: normalizedEmail,
         projectId: project._id,
-        role: entry.role,
+        role: UserRolesEnum.MEMBER,
         workspaceId: workspaceId || undefined,
       });
 
-      const actualName = entry.name || formatName(entry.email);
-      const mailContent = ghostInvitationMailgenContent(
-        actualName,
-        inviterName,
-        instituteName,
-        project.name,
-        onboardingUrl,
-      );
-
-      sendEmail({
-        email: normalizedEmail,
-        subject: `You've been invited to ${project.name} on Xugi`,
-        mailgenContent: mailContent,
-      }).catch((err) => console.error("Ghost Invite Email Failed:", err));
-
       results.ghosted.push(normalizedEmail);
     }
+
+    teamStatus.push({
+      name: memberName,
+      email: normalizedEmail,
+      isRegistered,
+    });
   }
+
+  // ─── 5. Process Leader & Send Exactly 1 Email with Team Status Table ───
+  const existingLeader = await User.findOne({ email: leaderEmailNormalized });
+  const leaderDisplayName =
+    leader.name?.trim() ||
+    existingLeader?.fullname ||
+    formatName(leader.email);
+
+  if (existingLeader) {
+    const alreadyLeaderMember = await ProjectMember.findOne({
+      user: existingLeader._id,
+      project: project._id,
+    });
+
+    if (!alreadyLeaderMember) {
+      await ProjectMember.create({
+        user: existingLeader._id,
+        project: project._id,
+        role: UserRolesEnum.PROJECT_ADMIN,
+      });
+    }
+
+    results.assigned.push(leaderEmailNormalized);
+  } else {
+    await PreInvitation.create({
+      email: leaderEmailNormalized,
+      projectId: project._id,
+      role: UserRolesEnum.PROJECT_ADMIN,
+      workspaceId: workspaceId || undefined,
+    });
+
+    results.ghosted.push(leaderEmailNormalized);
+  }
+
+  const leaderMailContent = leaderProjectCreatedMailgenContent(
+    leaderDisplayName,
+    project.name,
+    teamStatus,
+    dashboardUrl,
+  );
+
+  sendEmail({
+    email: leaderEmailNormalized,
+    subject: `Project ${project.name} Created Successfully on Xugi`,
+    mailgenContent: leaderMailContent,
+  }).catch((err) => console.error("Leader Project Creation Email Failed:", err));
 
   return res
     .status(201)
     .json(
       new ApiResponse(
         201,
-        { project, results },
+        { project, results, teamStatus },
         "Intake processed successfully",
       ),
     );
 });
 
 export { processBatchIntake };
+

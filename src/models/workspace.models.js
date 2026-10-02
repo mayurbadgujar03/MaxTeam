@@ -8,6 +8,11 @@ const workspaceSchema = new Schema(
       required: true,
       trim: true,
     },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     authorizedHods: [
       {
         type: Schema.Types.ObjectId,
