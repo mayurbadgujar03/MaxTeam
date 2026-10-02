@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Appearance</h2>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Choose how Flowbase looks on your device. Sync with your system or choose a custom mode.
+                Choose how Xugi looks on your device. Sync with your system or choose a custom mode.
               </p>
             </div>
 

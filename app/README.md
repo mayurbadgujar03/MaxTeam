@@ -1,6 +1,6 @@
-# Flowbase - JavaScript Version
+# Xugi - Frontend
 
-This is the JavaScript/JSX version of the Flowbase application, converted from TypeScript.
+This is the web and desktop client for Xugi.
 
 ## Project Structure
 

@@ -25,7 +25,7 @@ export function FeedbackModal({ open, onOpenChange }) {
     onSuccess: () => {
       toast({
         title: 'Feedback Submitted',
-        description: 'Thank you! Your feedback helps us improve Flowbase.',
+        description: 'Thank you! Your feedback helps us improve Xugi.',
       });
       setMessage('');
       setType('General');

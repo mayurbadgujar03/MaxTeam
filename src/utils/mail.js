@@ -5,8 +5,8 @@ const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
-      name: "Task Manager",
-      link: "https://example.app",
+      name: "Xugi",
+      link: "https://xugi.in",
     },
   });
 
@@ -16,7 +16,7 @@ const sendEmail = async (options) => {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const mail = {
-    from: "Flowbase <team@mayurbadgujar.me>",
+    from: "Xugi <team@mayurbadgujar.me>",
     to: options.email,
     subject: options.subject,
     text: emailTextual,
@@ -39,7 +39,7 @@ const emailVerificationMailgenContent = (
   return {
     body: {
       name: username,
-      intro: "Welcome to our app! We're very excited to have you on board.",
+      intro: "Welcome to Xugi! We're very excited to have you on board.",
       action: {
         instructions:
           "To verify your email please click on the following button:",

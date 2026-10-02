@@ -25,6 +25,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
   : [
     "http://localhost:5173",
     "http://localhost:8080",
+    "https://xugi.in",
+    "https://www.xugi.in",
     "https://flowbaseapp.vercel.app",
     "https://flowbase.mayurbadgujar.me",
     "https://mayurbadgujar.me",      // Added Portfolio (HTTPS)

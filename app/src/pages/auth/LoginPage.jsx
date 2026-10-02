@@ -19,7 +19,7 @@ export default function LoginPage() {
 
         <Card className="border-0 shadow-elevated">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-center text-2xl font-semibold">Welcome to Flowbase</CardTitle>
+            <CardTitle className="text-center text-2xl font-semibold">Welcome to Xugi</CardTitle>
             <CardDescription className="text-center text-muted-foreground">
               Sign in with your Google account to access your workspace
             </CardDescription>

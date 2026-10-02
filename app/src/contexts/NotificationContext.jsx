@@ -96,7 +96,7 @@ export const NotificationProvider = ({ children }) => {
       if (!notifiedSet.current.has(notif._id)) {
         notifiedSet.current.add(notif._id);
         if (Notification.permission === "granted") {
-          new Notification("Flowbase", {
+          new Notification("Xugi", {
             body: notif.message,
           });
         }

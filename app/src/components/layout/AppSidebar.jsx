@@ -49,10 +49,10 @@ export function AppSidebar({ isSidebarOpen, setIsSidebarOpen }) {
           onClick={() => setIsSidebarOpen(false)}
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-            <img src="/logo_tab_icon.png" alt="Flowbase Logo" className="h-8 w-8 shrink-0 object-contain" />
+            <img src="/logo_tab_icon.png" alt="Xugi Logo" className="h-8 w-8 shrink-0 object-contain" />
           </div>
           <span className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 font-extrabold tracking-tight text-2xl bg-gradient-to-r from-indigo-400 to-blue-600 bg-clip-text text-transparent select-none ml-3">
-            Flowbase
+            Xugi
           </span>
         </Link>
 

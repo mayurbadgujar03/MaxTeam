@@ -175,7 +175,7 @@ export default function IntakeFormPage() {
                 <Link to="/" className="w-full">
                   <Button className="w-full gap-2" variant="outline">
                     <Sparkles className="h-4 w-4" />
-                    Explore Flowbase
+                    Explore Xugi
                   </Button>
                 </Link>
               </div>
@@ -453,7 +453,7 @@ export default function IntakeFormPage() {
           <p className="text-xs text-muted-foreground">
             Powered by{' '}
             <Link to="/" className="text-primary hover:underline font-medium">
-              Flowbase
+              Xugi
             </Link>
           </p>
         </div>

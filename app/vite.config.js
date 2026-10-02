@@ -21,8 +21,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["logo_tab_icon.png"],
       manifest: {
-        name: "Flowbase",
-        short_name: "Flowbase",
+        name: "Xugi",
+        short_name: "Xugi",
         description: "Engineering Project Management Workspace",
         theme_color: "#ffffff",
         background_color: "#ffffff",

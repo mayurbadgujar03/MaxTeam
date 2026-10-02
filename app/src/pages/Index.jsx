@@ -172,7 +172,7 @@ export default function Index() {
                 <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
                 <div className="h-3 w-3 rounded-full bg-green-500/80" />
               </div>
-              <div className="text-[10px] font-mono text-muted-foreground/75">flowbase.io/dashboard</div>
+              <div className="text-[10px] font-mono text-muted-foreground/75">xugi.in/dashboard</div>
               <div className="w-12" />
             </div>
 
@@ -415,7 +415,7 @@ export default function Index() {
                 PWA & Mobile Ready
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Never fall out of sync. Install Flowbase directly onto your smartphone as a Progressive Web App. Enjoy fluid responsiveness, tap-focused interactive controls, and swift sync times.
+                Never fall out of sync. Install Xugi directly onto your smartphone as a Progressive Web App. Enjoy fluid responsiveness, tap-focused interactive controls, and swift sync times.
               </p>
               <ul className="space-y-2.5 pt-2">
                 {["Installable direct from major mobile browsers", "Optimized 40px touch interaction areas", "Intelligent push-alert notification panel"].map((item, idx) => (
@@ -438,7 +438,7 @@ export default function Index() {
                 </div>
                 {/* Screen Header */}
                 <div className="bg-card pt-6 pb-2.5 px-4 border-b border-border flex justify-between items-center text-left">
-                  <span className="font-extrabold text-[9px] tracking-tight text-foreground">Flowbase Mobile</span>
+                  <span className="font-extrabold text-[9px] tracking-tight text-foreground">Xugi Mobile</span>
                   <Badge className="text-[7px] h-3.5 px-1 py-0" variant="secondary">PWA</Badge>
                 </div>
                 {/* Screen content */}
@@ -500,7 +500,7 @@ export default function Index() {
               </div>
               <div className="p-5 rounded-xl border border-border bg-card space-y-2 shadow-card transition-base hover:shadow-soft">
                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">OAuth Authorization</h4>
-                <p className="text-[11px] text-muted-foreground leading-normal">Flowbase authenticates users securely via official Google OAuth APIs, preventing credential database leaks.</p>
+                <p className="text-[11px] text-muted-foreground leading-normal">Xugi authenticates users securely via official Google OAuth APIs, preventing credential database leaks.</p>
               </div>
             </div>
           </div>
@@ -565,7 +565,7 @@ export default function Index() {
           </div>
 
           <div className="mt-8 border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground/80">
-            <p>© 2026 Flowbase. All rights reserved.</p>
+            <p>© 2026 Xugi. All rights reserved.</p>
             <div className="flex gap-6">
               <Link to="/" className="hover:text-foreground transition-colors">Privacy Policy</Link>
               <Link to="/" className="hover:text-foreground transition-colors">Terms of Service</Link>
