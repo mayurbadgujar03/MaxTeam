@@ -1,6 +1,7 @@
 import Mailgen from "mailgen";
-import nodemailer from "nodemailer";
 import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
@@ -14,31 +15,6 @@ const sendEmail = async (options) => {
   const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
-  const smtpHost = process.env.MAIL_SMTP_HOST || "smtp.gmail.com";
-  const isGmailService = smtpHost.toLowerCase() === "gmail";
-  const port = Number(process.env.MAIL_SMTP_PORT) || (smtpHost === "smtp.resend.com" ? 465 : 587);
-  const secure = port === 465;
-
-  const transporterConfig = isGmailService
-    ? {
-        service: "gmail",
-        auth: {
-          user: process.env.MAIL_SMTP_USER,
-          pass: process.env.MAIL_SMTP_PASS,
-        },
-      }
-    : {
-        host: smtpHost,
-        port,
-        secure,
-        auth: {
-          user: process.env.MAIL_SMTP_USER,
-          pass: process.env.MAIL_SMTP_PASS,
-        },
-      };
-
-  const transporter = nodemailer.createTransport(transporterConfig);
-
   const mail = {
     from: process.env.EMAIL_FROM || '"Xugi" <no-reply@xugi.in>',
     to: options.email,
@@ -48,22 +24,13 @@ const sendEmail = async (options) => {
   };
 
   try {
-    await transporter.sendMail(mail);
+    await resend.emails.send(mail);
   } catch (error) {
-    // If SMTP fails and Resend API key is present, attempt fallback via Resend HTTP API
-    if (process.env.RESEND_API_KEY) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send(mail);
-        return;
-      } catch (resendError) {
-        console.error("Resend HTTP API fallback error:", resendError?.message || resendError);
-      }
-    }
-    console.error("Email send error:", error?.message || error);
+    console.error("Resend email error:", error?.message || error);
     throw new Error(`Failed to send email: ${error?.message}`);
   }
 };
+
 
 
 const emailVerificationMailgenContent = (
