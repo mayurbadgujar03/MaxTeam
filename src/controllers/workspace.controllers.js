@@ -109,8 +109,6 @@ const getMyWorkspaces = asyncHandler(async (req, res) => {
       _id: ws._id,
       name: ws.name,
       description: ws.description || "",
-      authorizedHods: hodIds,
-      coordinators: coordIds,
       isHod: hodIds.includes(userIdStr),
       isCoordinator: coordIds.includes(userIdStr),
     };

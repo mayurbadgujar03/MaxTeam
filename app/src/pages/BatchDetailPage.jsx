@@ -83,16 +83,7 @@ export default function BatchDetailPage() {
   const currentWs = activeWorkspace !== 'PERSONAL'
     ? workspaces?.find((ws) => ws._id === activeWorkspace)
     : null;
-  const isHod = Boolean(
-    activeWorkspace !== 'PERSONAL' &&
-    currentUserId &&
-    currentWs &&
-    (
-      Array.isArray(currentWs.authorizedHods)
-        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
-        : !!currentWs.isHod
-    )
-  );
+  const isHod = activeWorkspace !== 'PERSONAL' && !!currentWs?.isHod;
   const isCoordinator = batch?.coordinators?.some(
     (c) => (c._id || c)?.toString() === currentUserId
   ) || false;

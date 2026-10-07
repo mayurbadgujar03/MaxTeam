@@ -50,33 +50,12 @@ export default function ProjectsPage() {
     }
   }, [socket, queryClient, activeWorkspace]);
 
-  const currentUserId = (user?._id || user?.id)?.toString();
   const currentWs = activeWorkspace !== 'PERSONAL'
     ? workspaces?.find((ws) => ws._id === activeWorkspace)
     : null;
 
-  const isHod = Boolean(
-    activeWorkspace !== 'PERSONAL' &&
-    currentUserId &&
-    currentWs &&
-    (
-      Array.isArray(currentWs.authorizedHods)
-        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
-        : !!currentWs.isHod
-    )
-  );
-
-  const isCoordinator = Boolean(
-    activeWorkspace !== 'PERSONAL' &&
-    currentUserId &&
-    currentWs &&
-    (
-      Array.isArray(currentWs.coordinators)
-        ? currentWs.coordinators.some((id) => (id?._id || id)?.toString() === currentUserId)
-        : !!currentWs.isCoordinator
-    )
-  );
-
+  const isHod = !!currentWs?.isHod;
+  const isCoordinator = !!currentWs?.isCoordinator;
   const isWorkspaceAdmin = activeWorkspace !== 'PERSONAL' && (isHod || isCoordinator);
 
   const activeScope = isWorkspaceAdmin ? scopeTab : 'my';
@@ -89,7 +68,7 @@ export default function ProjectsPage() {
   const projects = projectsData?.data || [];
 
   // Filter projects by direct membership if 'My Projects' tab is active or user is not a workspace admin
-  const isMember = (project) => project.members?.some(m => m.user?._id === user?._id);
+  const isMember = (project) => project.members?.some(m => (m.user?._id || m.user)?.toString() === (user?._id || user?.id)?.toString());
   const displayedProjects = isWorkspaceAdmin
     ? (scopeTab === 'my' ? projects.filter(isMember) : projects)
     : projects.filter(isMember);

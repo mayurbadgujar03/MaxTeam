@@ -30,18 +30,8 @@ export function BatchManagementTab() {
   const [copiedId, setCopiedId] = useState(null);
 
   const isPersonal = activeWorkspace === 'PERSONAL';
-  const currentUserId = (user?._id || user?.id)?.toString();
   const currentWs = !isPersonal ? workspaces?.find((ws) => ws._id === activeWorkspace) : null;
-  const isHod = Boolean(
-    !isPersonal &&
-    currentUserId &&
-    currentWs &&
-    (
-      Array.isArray(currentWs.authorizedHods)
-        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
-        : !!currentWs.isHod
-    )
-  );
+  const isHod = !isPersonal && !!currentWs?.isHod;
 
   const { data: batchesData, isLoading } = useQuery({
     queryKey: ['batches', activeWorkspace],
