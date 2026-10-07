@@ -11,16 +11,25 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('activeWorkspace') || 'PERSONAL';
   });
 
+  const [workspaces, setWorkspaces] = useState([]);
+
   const setActiveWorkspace = (workspaceId) => {
-    setActiveWorkspaceState(workspaceId);
-    if (workspaceId) {
+    if (!workspaceId || workspaceId === 'PERSONAL') {
+      setActiveWorkspaceState('PERSONAL');
+      localStorage.setItem('activeWorkspace', 'PERSONAL');
+      return;
+    }
+
+    // Only allow selecting workspaces the user belongs to
+    const isAllowed = workspaces.some((ws) => ws._id === workspaceId);
+    if (isAllowed) {
+      setActiveWorkspaceState(workspaceId);
       localStorage.setItem('activeWorkspace', workspaceId);
     } else {
-      localStorage.removeItem('activeWorkspace');
+      setActiveWorkspaceState('PERSONAL');
+      localStorage.setItem('activeWorkspace', 'PERSONAL');
     }
   };
-
-  const [workspaces, setWorkspaces] = useState([]);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -29,14 +38,38 @@ export const AuthProvider = ({ children }) => {
       try {
         const wsResponse = await workspaceApi.getMyWorkspaces();
         // Since getMyWorkspaces returns ApiResponse(200, workspaces, ...), the array is in response.data.data
-        setWorkspaces(wsResponse.data || []);
+        const validWorkspaces = wsResponse.data || [];
+        setWorkspaces(validWorkspaces);
+
+        // Strict activeWorkspace validation:
+        // If workspace list is empty, default strictly to 'PERSONAL'
+        // If the current activeWorkspace is not in the user's workspaces, revert to 'PERSONAL'
+        setActiveWorkspaceState((prev) => {
+          if (!validWorkspaces || validWorkspaces.length === 0) {
+            localStorage.setItem('activeWorkspace', 'PERSONAL');
+            return 'PERSONAL';
+          }
+          if (prev === 'PERSONAL') {
+            return 'PERSONAL';
+          }
+          const exists = validWorkspaces.some((ws) => ws._id === prev);
+          if (!exists) {
+            localStorage.setItem('activeWorkspace', 'PERSONAL');
+            return 'PERSONAL';
+          }
+          return prev;
+        });
       } catch (wsError) {
         console.error("Failed to fetch workspaces:", wsError);
         setWorkspaces([]);
+        setActiveWorkspaceState('PERSONAL');
+        localStorage.setItem('activeWorkspace', 'PERSONAL');
       }
     } catch (error) {
       setUser(null);
       setWorkspaces([]);
+      setActiveWorkspaceState('PERSONAL');
+      localStorage.removeItem('activeWorkspace');
       throw error;
     }
   }, []);
@@ -54,6 +87,9 @@ export const AuthProvider = ({ children }) => {
 
       const isLoggedInFlag = localStorage.getItem('isLoggedIn') === 'true';
       if (!isLoggedInFlag) {
+        setUser(null);
+        setWorkspaces([]);
+        setActiveWorkspaceState('PERSONAL');
         setIsLoading(false);
         return;
       }
@@ -68,6 +104,9 @@ export const AuthProvider = ({ children }) => {
         } catch (refreshError) {
           console.error("Auth Context Error - Token refresh completely failed:", refreshError);
           setUser(null);
+          setWorkspaces([]);
+          setActiveWorkspaceState('PERSONAL');
+          localStorage.removeItem('activeWorkspace');
           localStorage.removeItem('isLoggedIn');
         }
       } finally {
@@ -81,6 +120,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await authApi.logout();
     setUser(null);
+    setWorkspaces([]);
+    setActiveWorkspaceState('PERSONAL');
     localStorage.removeItem('activeWorkspace');
     localStorage.removeItem('isLoggedIn');
   };

@@ -50,9 +50,33 @@ export default function ProjectsPage() {
     }
   }, [socket, queryClient, activeWorkspace]);
 
-  const currentWs = workspaces?.find(ws => ws._id === activeWorkspace);
-  const isHod = !!currentWs?.isHod;
-  const isCoordinator = !!currentWs?.isCoordinator;
+  const currentUserId = (user?._id || user?.id)?.toString();
+  const currentWs = activeWorkspace !== 'PERSONAL'
+    ? workspaces?.find((ws) => ws._id === activeWorkspace)
+    : null;
+
+  const isHod = Boolean(
+    activeWorkspace !== 'PERSONAL' &&
+    currentUserId &&
+    currentWs &&
+    (
+      Array.isArray(currentWs.authorizedHods)
+        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWs.isHod
+    )
+  );
+
+  const isCoordinator = Boolean(
+    activeWorkspace !== 'PERSONAL' &&
+    currentUserId &&
+    currentWs &&
+    (
+      Array.isArray(currentWs.coordinators)
+        ? currentWs.coordinators.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWs.isCoordinator
+    )
+  );
+
   const isWorkspaceAdmin = activeWorkspace !== 'PERSONAL' && (isHod || isCoordinator);
 
   const activeScope = isWorkspaceAdmin ? scopeTab : 'my';

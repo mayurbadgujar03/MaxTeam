@@ -76,7 +76,6 @@ const processBatchIntake = asyncHandler(async (req, res) => {
       email: mentorEmailNormalized,
       projectId: project._id,
       role: UserRolesEnum.ADMIN,
-      workspaceId: workspaceId || undefined,
     });
   }
 
@@ -141,7 +140,6 @@ const processBatchIntake = asyncHandler(async (req, res) => {
         email: normalizedEmail,
         projectId: project._id,
         role: UserRolesEnum.MEMBER,
-        workspaceId: workspaceId || undefined,
       });
 
       results.ghosted.push(normalizedEmail);
@@ -181,7 +179,6 @@ const processBatchIntake = asyncHandler(async (req, res) => {
       email: leaderEmailNormalized,
       projectId: project._id,
       role: UserRolesEnum.PROJECT_ADMIN,
-      workspaceId: workspaceId || undefined,
     });
 
     results.ghosted.push(leaderEmailNormalized);

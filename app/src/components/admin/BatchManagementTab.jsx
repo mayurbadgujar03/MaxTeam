@@ -14,7 +14,7 @@ import { Copy, Plus, School, Library, Loader2, ClipboardCheck, UserPlus, Mail } 
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function BatchManagementTab() {
-  const { activeWorkspace, workspaces } = useAuth();
+  const { activeWorkspace, workspaces, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -30,7 +30,18 @@ export function BatchManagementTab() {
   const [copiedId, setCopiedId] = useState(null);
 
   const isPersonal = activeWorkspace === 'PERSONAL';
-  const isHod = workspaces?.find((ws) => ws._id === activeWorkspace)?.isHod || false;
+  const currentUserId = (user?._id || user?.id)?.toString();
+  const currentWs = !isPersonal ? workspaces?.find((ws) => ws._id === activeWorkspace) : null;
+  const isHod = Boolean(
+    !isPersonal &&
+    currentUserId &&
+    currentWs &&
+    (
+      Array.isArray(currentWs.authorizedHods)
+        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWs.isHod
+    )
+  );
 
   const { data: batchesData, isLoading } = useQuery({
     queryKey: ['batches', activeWorkspace],

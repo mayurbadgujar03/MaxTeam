@@ -147,7 +147,8 @@ const googleCallback = asyncHandler(async (req, res) => {
       const pendingInvites = await PreInvitation.find({ email: user.email.toLowerCase() });
       if (pendingInvites.length > 0) {
         const projectInvites = pendingInvites.filter((invite) => invite.projectId);
-        const workspaceInvites = pendingInvites.filter((invite) => invite.workspaceId);
+        // Only dedicate workspace invitations (without projectId) grant HOD privileges
+        const workspaceInvites = pendingInvites.filter((invite) => invite.workspaceId && !invite.projectId);
 
         if (projectInvites.length > 0) {
           const memberPayloads = projectInvites.map((invite) => ({

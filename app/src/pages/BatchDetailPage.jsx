@@ -79,9 +79,22 @@ export default function BatchDetailPage() {
     (p) => p.batchId?._id === batchId || p.batchId === batchId
   );
 
-  const isHod = workspaces?.find((ws) => ws._id === activeWorkspace)?.isHod || false;
+  const currentUserId = (user?._id || user?.id)?.toString();
+  const currentWs = activeWorkspace !== 'PERSONAL'
+    ? workspaces?.find((ws) => ws._id === activeWorkspace)
+    : null;
+  const isHod = Boolean(
+    activeWorkspace !== 'PERSONAL' &&
+    currentUserId &&
+    currentWs &&
+    (
+      Array.isArray(currentWs.authorizedHods)
+        ? currentWs.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWs.isHod
+    )
+  );
   const isCoordinator = batch?.coordinators?.some(
-    (c) => (c._id || c)?.toString() === user?._id?.toString()
+    (c) => (c._id || c)?.toString() === currentUserId
   ) || false;
 
   useEffect(() => {

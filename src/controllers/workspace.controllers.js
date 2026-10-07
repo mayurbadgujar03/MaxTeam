@@ -5,68 +5,116 @@ import { InstitutionWorkspace } from "../models/workspace.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { User } from "../models/user.models.js";
 import { Batch } from "../models/batch.models.js";
+import mongoose from "mongoose";
 
 const getMyWorkspaces = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const userObjId = new mongoose.Types.ObjectId(userId);
+  const userIdStr = userId.toString();
 
   // 1. Workspaces where user is an authorized HOD
   const hodWorkspaces = await InstitutionWorkspace.find({
-    authorizedHods: userId,
+    authorizedHods: userObjId,
+    deletedAt: null,
   })
-    .select("_id name")
+    .select("_id name description authorizedHods")
     .lean();
 
   // 2. Workspaces where user is a project member
   const memberships = await ProjectMember.find({
-    user: userId,
+    user: userObjId,
+    deletedAt: null,
   })
     .populate({
       path: "project",
+      match: { deletedAt: null },
       select: "workspaceId",
     })
     .lean();
 
   const memberWorkspaceIds = memberships
     .map((m) => m.project?.workspaceId)
-    .filter((id) => id != null);
+    .filter((id) => id != null)
+    .map((id) => id.toString());
 
-  // 3. NEW: Workspaces where user is a Batch Coordinator
+  // 3. Workspaces where user is a Batch Coordinator
   const coordinatorBatches = await Batch.find({
-    coordinators: userId,
-  }).select("workspaceId").lean();
+    coordinators: userObjId,
+    deletedAt: null,
+  })
+    .select("workspaceId coordinators")
+    .lean();
 
   const coordinatorWorkspaceIds = coordinatorBatches
     .map((b) => b.workspaceId)
-    .filter((id) => id != null);
+    .filter((id) => id != null)
+    .map((id) => id.toString());
 
   // Combine IDs and fetch additional workspaces in one query
-  const additionalWorkspaceIds = [...new Set([...memberWorkspaceIds, ...coordinatorWorkspaceIds])];
+  const additionalWorkspaceIds = [
+    ...new Set([...memberWorkspaceIds, ...coordinatorWorkspaceIds]),
+  ];
 
   const additionalWorkspaces = await InstitutionWorkspace.find({
     _id: { $in: additionalWorkspaceIds },
+    deletedAt: null,
   })
-    .select("_id name")
+    .select("_id name description authorizedHods")
     .lean();
 
-  // Merge and deduplicate, tagging each workspace with the user's role
-  const hodIdSet = new Set(hodWorkspaces.map((ws) => ws._id.toString()));
-  const coordinatorIdSet = new Set(coordinatorWorkspaceIds.map((id) => id.toString()));
-
+  // Merge and deduplicate all workspace documents
   const merged = [...hodWorkspaces, ...additionalWorkspaces];
   const seen = new Set();
-  const workspaces = [];
+  const uniqueWorkspaces = [];
 
   for (const ws of merged) {
     const idStr = ws._id.toString();
     if (!seen.has(idStr)) {
       seen.add(idStr);
-      workspaces.push({
-        ...ws,
-        isHod: hodIdSet.has(idStr),
-        isCoordinator: coordinatorIdSet.has(idStr)
-      });
+      uniqueWorkspaces.push(ws);
     }
   }
+
+  // Fetch all batches in these workspaces to collect coordinator IDs
+  const allWorkspaceIds = uniqueWorkspaces.map((ws) => ws._id);
+  const batchesInWorkspaces = await Batch.find({
+    workspaceId: { $in: allWorkspaceIds },
+    deletedAt: null,
+  })
+    .select("workspaceId coordinators")
+    .lean();
+
+  const workspaceCoordinatorsMap = new Map();
+  for (const b of batchesInWorkspaces) {
+    const wsIdStr = b.workspaceId?.toString();
+    if (!wsIdStr) continue;
+    if (!workspaceCoordinatorsMap.has(wsIdStr)) {
+      workspaceCoordinatorsMap.set(wsIdStr, new Set());
+    }
+    const set = workspaceCoordinatorsMap.get(wsIdStr);
+    for (const c of b.coordinators || []) {
+      if (c) {
+        set.add((c._id || c).toString());
+      }
+    }
+  }
+
+  const workspaces = uniqueWorkspaces.map((ws) => {
+    const idStr = ws._id.toString();
+    const hodIds = (ws.authorizedHods || []).map((h) => (h._id || h).toString());
+    const coordSet = workspaceCoordinatorsMap.get(idStr) || new Set();
+    const coordIds = Array.from(coordSet);
+
+    return {
+      _id: ws._id,
+      name: ws.name,
+      description: ws.description || "",
+      authorizedHods: hodIds,
+      coordinators: coordIds,
+      isHod: hodIds.includes(userIdStr),
+      isCoordinator: coordIds.includes(userIdStr),
+    };
+  });
 
   return res
     .status(200)

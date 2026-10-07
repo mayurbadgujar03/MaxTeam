@@ -4,20 +4,53 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 export function InstitutionAdminRoute({ children }) {
-  const { isAuthenticated, isLoading, activeWorkspace, setActiveWorkspace, workspaces } = useAuth();
+  const { isAuthenticated, isLoading, activeWorkspace, setActiveWorkspace, workspaces, user } = useAuth();
 
-  // Fix the redirect bug: First check the current workspace
-  let currentWorkspace = workspaces.find((ws) => ws._id === activeWorkspace);
-  let isAuthorized = currentWorkspace?.isHod || currentWorkspace?.isCoordinator;
+  const currentUserId = (user?._id || user?.id)?.toString();
+  const currentWorkspace = activeWorkspace !== 'PERSONAL'
+    ? workspaces?.find((ws) => ws._id === activeWorkspace)
+    : null;
+
+  const isHod = Boolean(
+    activeWorkspace !== 'PERSONAL' &&
+    currentUserId &&
+    currentWorkspace &&
+    (
+      Array.isArray(currentWorkspace.authorizedHods)
+        ? currentWorkspace.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWorkspace.isHod
+    )
+  );
+
+  const isCoordinator = Boolean(
+    activeWorkspace !== 'PERSONAL' &&
+    currentUserId &&
+    currentWorkspace &&
+    (
+      Array.isArray(currentWorkspace.coordinators)
+        ? currentWorkspace.coordinators.some((id) => (id?._id || id)?.toString() === currentUserId)
+        : !!currentWorkspace.isCoordinator
+    )
+  );
+
+  let isAuthorized = activeWorkspace !== 'PERSONAL' && (isHod || isCoordinator);
 
   useEffect(() => {
-    if (!isLoading && !isAuthorized) {
-      const firstAuthorized = workspaces.find((ws) => ws.isHod || ws.isCoordinator);
+    if (!isLoading && !isAuthorized && currentUserId && workspaces?.length > 0) {
+      const firstAuthorized = workspaces.find((ws) => {
+        const hod = Array.isArray(ws.authorizedHods)
+          ? ws.authorizedHods.some((id) => (id?._id || id)?.toString() === currentUserId)
+          : !!ws.isHod;
+        const coord = Array.isArray(ws.coordinators)
+          ? ws.coordinators.some((id) => (id?._id || id)?.toString() === currentUserId)
+          : !!ws.isCoordinator;
+        return hod || coord;
+      });
       if (firstAuthorized) {
         setActiveWorkspace(firstAuthorized._id);
       }
     }
-  }, [isLoading, isAuthorized, workspaces, setActiveWorkspace]);
+  }, [isLoading, isAuthorized, workspaces, setActiveWorkspace, currentUserId]);
 
   if (isLoading) {
     return (
