@@ -23,6 +23,8 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import BatchesPage from "./pages/BatchesPage";
 import IntakeFormPage from "./pages/IntakeFormPage";
 import BatchDetailPage from "./pages/BatchDetailPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const Router = typeof window !== 'undefined' && window.navigator.userAgent.toLowerCase().includes('electron')
   ? HashRouter
@@ -58,6 +60,10 @@ const App = () => (
                   <Route path="/auth/reset-password/:token" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/auth/verify-email" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/auth/verify-email/:token" element={<Navigate to="/auth/login" replace />} />
+
+                  {/* Legal pages — public */}
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
 
                   {/* Public intake form — outside ProtectedRoute */}
                   <Route path="/intake/:batchId" element={<IntakeFormPage />} />

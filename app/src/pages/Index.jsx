@@ -25,6 +25,8 @@ import {
   Eye,
   TrendingUp,
   Quote,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { feedbackApi } from '@/api/feedback';
@@ -589,7 +591,7 @@ export default function Index() {
             {!isLoading && (
               <>
                 <a
-                  href="mailto:xugi@svkmnmimsgu.ac.in?subject=Institutional%20Access%20Request"
+                  href="mailto:xugi.hq@gmail.com?subject=Institutional%20Access%20Request"
                   className="hidden sm:block text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Book a Demo
@@ -681,7 +683,7 @@ export default function Index() {
               </Link>
 
               <a
-                href="mailto:xugi@svkmnmimsgu.ac.in?subject=Institutional%20Access%20Request"
+                href="mailto:xugi.hq@gmail.com?subject=Institutional%20Access%20Request"
                 className="w-full sm:w-auto"
               >
                 <Button
@@ -695,11 +697,7 @@ export default function Index() {
               </a>
             </div>
 
-            {!isAuthenticated && (
-              <p className="text-xs text-muted-foreground/70 font-medium">
-                Institutional access only · No credit card required
-              </p>
-            )}
+
 
             <div className="flex justify-center">
               <Badge
@@ -896,14 +894,14 @@ export default function Index() {
               {
                 quote: 'Finally, a platform that treats student contributions as the valuable data they are.',
                 name: 'Dr. Mayuri Kulkarni',
-                role: 'Faculty',
+                role: 'Assistant Professor',
                 initials: 'MK',
                 gradient: 'from-rose-500 to-pink-600',
               },
               {
                 quote: 'The Kanban boards give students a real taste of industry-grade project management.',
                 name: 'Dr. Kavita Patil',
-                role: 'Faculty',
+                role: 'Assistant Professor',
                 initials: 'KP',
                 gradient: 'from-cyan-500 to-sky-600',
               },
@@ -1015,7 +1013,7 @@ export default function Index() {
                   </Button>
                 </Link>
               )}
-              <a href="mailto:xugi@svkmnmimsgu.ac.in?subject=Institutional%20Access%20Request" className="w-full sm:w-auto">
+              <a href="mailto:xugi.hq@gmail.com?subject=Institutional%20Access%20Request" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="font-semibold px-8 h-12 gap-2 border-border hover:bg-muted transition-base w-full">
                   <Briefcase className="h-4 w-4" />
                   Book a Demo
@@ -1031,12 +1029,18 @@ export default function Index() {
       ════════════════════════════════════════ */}
       <footer className="border-t border-border bg-card/40 py-12 select-none text-left">
         <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2.5">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-8">
+            {/* Brand + tagline */}
+            <div className="flex flex-col gap-3">
               <XugiLogo size="sm" />
+              <p className="text-xs text-muted-foreground max-w-[200px] leading-relaxed">
+                The unified workspace for institutional engineering project management.
+              </p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+            {/* Navigation links */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] font-bold text-foreground uppercase tracking-widest">Navigate</p>
               {[
                 { label: 'Features', id: 'features' },
                 { label: 'Security', id: 'security' },
@@ -1045,25 +1049,44 @@ export default function Index() {
                 <button
                   key={item.id}
                   onClick={() => scrollTo(item.id)}
-                  className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider bg-transparent border-0 cursor-pointer"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left bg-transparent border-0 cursor-pointer"
                 >
                   {item.label}
                 </button>
               ))}
               <button
                 onClick={() => setIsFeedbackOpen(true)}
-                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider bg-transparent border-0 cursor-pointer p-0"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left bg-transparent border-0 cursor-pointer p-0"
               >
                 Feedback
               </button>
             </div>
+
+            {/* Contact */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] font-bold text-foreground uppercase tracking-widest">Contact</p>
+              <a
+                href="mailto:xugi.hq@gmail.com"
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Mail className="h-3.5 w-3.5 shrink-0" />
+                xugi.hq@gmail.com
+              </a>
+              <a
+                href="tel:+918160079598"
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 shrink-0" />
+                +91 8160079598
+              </a>
+            </div>
           </div>
 
           <div className="mt-8 border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground/80">
-            <p>© 2026 XUGI. All rights reserved. Built for SVKM NMIMS Global University.</p>
+            <p>© 2026 XUGI. All rights reserved.</p>
             <div className="flex gap-6">
-              <Link to="/" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-              <Link to="/" className="hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
