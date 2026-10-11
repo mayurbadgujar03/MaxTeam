@@ -60,7 +60,7 @@ const processBatchIntake = asyncHandler(async (req, res) => {
     groupNumber: groupNumber ? Number(groupNumber) : null,
     startDate: startDate || null,
     endDate: endDate || null,
-    milestones: generateDynamicTimeline(startDate, endDate),
+    milestones: startDate && endDate ? generateDynamicTimeline(startDate, endDate) : [],
   });
 
   // Assign ONLY the actual mentor to the project team:

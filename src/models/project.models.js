@@ -93,7 +93,10 @@ const projectSchema = new Schema(
       type: Date,
       default: null,
     },
-    milestones: [milestoneSubSchema],
+    milestones: {
+      type: [milestoneSubSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
