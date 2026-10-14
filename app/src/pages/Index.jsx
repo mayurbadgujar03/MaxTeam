@@ -1,4 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+// ─── useScrollReveal ─────────────────────────────────────────────────────────
+// Lightweight IntersectionObserver hook. Returns a ref to attach to a wrapper.
+// When the element enters the viewport, adds 'sr-visible' class.
+function useScrollReveal(options = {}) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('sr-visible');
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px', ...options }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -556,8 +579,179 @@ export default function Index() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // ─── Scroll-reveal refs ──────────────────────────────────────────────────
+  const heroRef        = useScrollReveal();
+  const trustRef       = useScrollReveal();
+  const roleRef        = useScrollReveal();
+  const statsRef       = useScrollReveal();
+  const testimonialsRef = useScrollReveal();
+
   return (
     <div className="min-h-screen bg-background select-none font-sans overflow-x-hidden font-normal">
+
+      {/* ── Engineering Drafting-Board Background ─────────────────────────── */}
+      {/* Dot-matrix grid with crosshair accents — pure CSS, zero JS cost */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-20 select-none"
+        style={{
+          backgroundImage: [
+            /* fine dot grid */
+            'radial-gradient(circle, hsl(var(--foreground) / 0.12) 1px, transparent 1px)',
+            /* wider crosshair grid overlay */
+            'linear-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px)',
+            'linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px)',
+          ].join(', '),
+          backgroundSize: '28px 28px, 140px 140px, 140px 140px',
+          backgroundPosition: 'center center',
+        }}
+      />
+      {/* Crosshair (+) accent marks at grid intersections — rendered via SVG filter trick */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-20 select-none opacity-[0.07] dark:opacity-[0.05]"
+        style={{
+          backgroundImage: [
+            'radial-gradient(circle 0.5px at 0 0, hsl(var(--foreground)) 100%, transparent 100%)',
+          ].join(', '),
+          backgroundSize: '140px 140px',
+        }}
+      />
+
+      {/* ── Kintsugi SVG Background Elements ──────────────────────────────── */}
+      {/* Three abstract SVGs: left circuit-trace, right circuit-trace, center node cluster */}
+      {/* All positioned behind content with -z-10 */}
+
+      {/* LEFT — golden repair seam flowing down */}
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 -z-10 h-full w-[380px] select-none opacity-[0.18] dark:opacity-[0.13]"
+        viewBox="0 0 380 900"
+        preserveAspectRatio="xMidYMid meet"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient id="kintsugi-left-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#f59e0b" stopOpacity="0" />
+            <stop offset="25%"  stopColor="#f59e0b" stopOpacity="0.9" />
+            <stop offset="65%"  stopColor="#d97706" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#92400e" stopOpacity="0" />
+          </linearGradient>
+          <filter id="kintsugi-glow-l" x="-40%" y="-10%" width="180%" height="120%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        {/* Main seam path */}
+        <path
+          d="M 60 0 C 80 120, 20 200, 55 320 S 140 440, 100 560 S 30 680, 80 900"
+          stroke="url(#kintsugi-left-grad)"
+          strokeWidth="1.5"
+          filter="url(#kintsugi-glow-l)"
+        />
+        {/* Branch traces */}
+        <path d="M 55 320 L 140 345" stroke="#f59e0b" strokeWidth="0.8" strokeOpacity="0.5" />
+        <path d="M 100 560 L 175 540" stroke="#f59e0b" strokeWidth="0.8" strokeOpacity="0.4" />
+        <path d="M 80 900 L 160 870" stroke="#d97706" strokeWidth="0.8" strokeOpacity="0.3" />
+        {/* Junction nodes */}
+        <circle cx="55"  cy="320" r="4" fill="#f59e0b" fillOpacity="0.7" filter="url(#kintsugi-glow-l)" />
+        <circle cx="100" cy="560" r="4" fill="#f59e0b" fillOpacity="0.6" filter="url(#kintsugi-glow-l)" />
+        <circle cx="80"  cy="900" r="3" fill="#d97706" fillOpacity="0.4" />
+        {/* Outer rings on nodes */}
+        <circle cx="55"  cy="320" r="10" stroke="#f59e0b" strokeOpacity="0.25" strokeWidth="1" fill="none" />
+        <circle cx="100" cy="560" r="10" stroke="#f59e0b" strokeOpacity="0.20" strokeWidth="1" fill="none" />
+      </svg>
+
+      {/* RIGHT — mirror circuit-trace */}
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none fixed right-0 top-0 -z-10 h-full w-[380px] select-none opacity-[0.15] dark:opacity-[0.10]"
+        viewBox="0 0 380 900"
+        preserveAspectRatio="xMidYMid meet"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient id="kintsugi-right-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#818cf8" stopOpacity="0" />
+            <stop offset="20%"  stopColor="#818cf8" stopOpacity="0.8" />
+            <stop offset="55%"  stopColor="#f59e0b" stopOpacity="0.7" />
+            <stop offset="85%"  stopColor="#f59e0b" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+          </linearGradient>
+          <filter id="kintsugi-glow-r" x="-40%" y="-10%" width="180%" height="120%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        {/* Main seam path — mirrored */}
+        <path
+          d="M 320 0 C 300 100, 360 200, 325 350 S 240 470, 280 610 S 350 730, 300 900"
+          stroke="url(#kintsugi-right-grad)"
+          strokeWidth="1.5"
+          filter="url(#kintsugi-glow-r)"
+        />
+        {/* Branch traces */}
+        <path d="M 325 350 L 240 375" stroke="#818cf8" strokeWidth="0.8" strokeOpacity="0.4" />
+        <path d="M 280 610 L 200 590" stroke="#f59e0b" strokeWidth="0.8" strokeOpacity="0.4" />
+        {/* Junction nodes */}
+        <circle cx="325" cy="350" r="4" fill="#818cf8" fillOpacity="0.7" filter="url(#kintsugi-glow-r)" />
+        <circle cx="280" cy="610" r="4" fill="#f59e0b" fillOpacity="0.6" filter="url(#kintsugi-glow-r)" />
+        {/* Outer rings */}
+        <circle cx="325" cy="350" r="10" stroke="#818cf8" strokeOpacity="0.22" strokeWidth="1" fill="none" />
+        <circle cx="280" cy="610" r="10" stroke="#f59e0b"  strokeOpacity="0.20" strokeWidth="1" fill="none" />
+      </svg>
+
+      {/* CENTER — connection node cluster floating near hero */}
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[18%] -z-10 -translate-x-1/2 select-none opacity-[0.10] dark:opacity-[0.07]"
+        width="520" height="320"
+        viewBox="0 0 520 320"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <filter id="node-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        {/* Connection lines between nodes */}
+        <line x1="260" y1="160" x2="90"  y2="80"  stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.6" />
+        <line x1="260" y1="160" x2="430" y2="70"  stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.5" />
+        <line x1="260" y1="160" x2="140" y2="260" stroke="#818cf8" strokeWidth="1" strokeOpacity="0.5" />
+        <line x1="260" y1="160" x2="390" y2="255" stroke="#818cf8" strokeWidth="1" strokeOpacity="0.4" />
+        <line x1="90"  y1="80"  x2="430" y2="70"  stroke="#f59e0b" strokeWidth="0.6" strokeOpacity="0.3" strokeDasharray="4 6" />
+        <line x1="140" y1="260" x2="390" y2="255" stroke="#818cf8" strokeWidth="0.6" strokeOpacity="0.25" strokeDasharray="4 6" />
+        {/* Center hub */}
+        <circle cx="260" cy="160" r="14" fill="#f59e0b" fillOpacity="0.5" filter="url(#node-glow)" />
+        <circle cx="260" cy="160" r="24" stroke="#f59e0b" strokeOpacity="0.25" strokeWidth="1.5" fill="none" />
+        <circle cx="260" cy="160" r="38" stroke="#f59e0b" strokeOpacity="0.10" strokeWidth="1"   fill="none" />
+        {/* Outer nodes */}
+        <circle cx="90"  cy="80"  r="7" fill="#f59e0b" fillOpacity="0.55" filter="url(#node-glow)" />
+        <circle cx="90"  cy="80"  r="14" stroke="#f59e0b" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+        <circle cx="430" cy="70"  r="6" fill="#f59e0b" fillOpacity="0.50" filter="url(#node-glow)" />
+        <circle cx="430" cy="70"  r="13" stroke="#f59e0b" strokeOpacity="0.18" strokeWidth="1" fill="none" />
+        <circle cx="140" cy="260" r="7" fill="#818cf8" fillOpacity="0.55" filter="url(#node-glow)" />
+        <circle cx="140" cy="260" r="14" stroke="#818cf8" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+        <circle cx="390" cy="255" r="6" fill="#818cf8" fillOpacity="0.50" filter="url(#node-glow)" />
+        <circle cx="390" cy="255" r="13" stroke="#818cf8" strokeOpacity="0.18" strokeWidth="1" fill="none" />
+      </svg>
+
+      {/* ── Global scroll-reveal styles (injected once) ─────────────────── */}
+      <style>{`
+        .sr-init {
+          opacity: 0;
+          transform: translateY(2rem);
+          transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .sr-visible {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+        }
+      `}</style>
 
       {/* ════════════════════════════════════════
           1. STICKY NAVIGATION BAR
@@ -618,7 +812,7 @@ export default function Index() {
         {/* ════════════════════════════════════════
             2. HERO SECTION
         ════════════════════════════════════════ */}
-        <section className="relative container mx-auto px-4 pt-20 pb-16 sm:pt-28 sm:pb-20 flex flex-col items-center justify-center text-center max-w-6xl">
+        <section ref={heroRef} className="sr-init relative container mx-auto px-4 pt-20 pb-16 sm:pt-28 sm:pb-20 flex flex-col items-center justify-center text-center max-w-6xl">
           <div className="absolute left-1/2 top-1/3 -z-10 h-[400px] w-[400px] sm:h-[600px] sm:w-[600px] -translate-x-1/2 -translate-y-1/2 bg-primary/8 blur-[120px] sm:blur-[160px] rounded-full pointer-events-none" />
 
           <div className="mx-auto max-w-4xl space-y-6">
@@ -782,7 +976,7 @@ export default function Index() {
         {/* ════════════════════════════════════════
             3. SVKM TRUST BANNER
         ════════════════════════════════════════ */}
-        <section className="border-y border-border/60 bg-muted/15 py-8 sm:py-10">
+        <section ref={trustRef} className="sr-init border-y border-border/60 bg-muted/15 py-8 sm:py-10">
           <div className="container mx-auto px-4 max-w-4xl text-center space-y-5">
             <p className="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase">
               Trusted by the visionary engineering teams at
@@ -820,12 +1014,12 @@ export default function Index() {
         {/* ════════════════════════════════════════
             4. ROLE-BASED FEATURES
         ════════════════════════════════════════ */}
-        <RoleSection />
+        <div ref={roleRef} className="sr-init"><RoleSection /></div>
 
         {/* ════════════════════════════════════════
             5. IMPACT STATS STRIP
         ════════════════════════════════════════ */}
-        <section className="border-y border-border/60 bg-gradient-to-r from-primary/5 via-background to-primary/5 py-12 sm:py-16">
+        <section ref={statsRef} className="sr-init border-y border-border/60 bg-gradient-to-r from-primary/5 via-background to-primary/5 py-12 sm:py-16">
           <div className="container mx-auto px-4 max-w-5xl">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
               {[
@@ -847,7 +1041,7 @@ export default function Index() {
         {/* ════════════════════════════════════════
             6. TESTIMONIALS GRID
         ════════════════════════════════════════ */}
-        <section id="testimonials" className="container mx-auto px-4 py-16 sm:py-24 max-w-6xl">
+        <section ref={testimonialsRef} id="testimonials" className="sr-init container mx-auto px-4 py-16 sm:py-24 max-w-6xl">
           <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-3">
             <Badge
               variant="outline"
