@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // ─── useScrollReveal ─────────────────────────────────────────────────────────
 // Lightweight IntersectionObserver hook. Returns a ref to attach to a wrapper.
@@ -22,7 +22,7 @@ function useScrollReveal(options = {}) {
   }, []);
   return ref;
 }
-import { useQuery } from '@tanstack/react-query';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +52,7 @@ import {
   Phone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { feedbackApi } from '@/api/feedback';
+
 import { FeedbackModal } from '@/components/shared/FeedbackModal';
 import { XugiLogo } from '@/components/shared/XugiLogo';
 
@@ -565,15 +565,7 @@ export default function Index() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  const { data: publicStats } = useQuery({
-    queryKey: ['public-stats'],
-    queryFn: () => feedbackApi.getPublicStats(),
-  });
 
-  const totalUsers =
-    publicStats?.data?.totalUsers && publicStats.data.totalUsers > 0
-      ? publicStats.data.totalUsers
-      : 100;
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -587,33 +579,30 @@ export default function Index() {
   const testimonialsRef = useScrollReveal();
 
   return (
-    <div className="min-h-screen bg-background select-none font-sans overflow-x-hidden font-normal">
+    <div className="relative isolate min-h-screen bg-background select-none font-sans overflow-x-hidden font-normal">
 
       {/* ── Engineering Drafting-Board Background ─────────────────────────── */}
       {/* Dot-matrix grid with crosshair accents — pure CSS, zero JS cost */}
+      {/* Dot-matrix + crosshair grid — absolute so it respects the isolate stacking context */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-20 select-none"
+        className="pointer-events-none absolute inset-0 -z-20 select-none"
         style={{
           backgroundImage: [
-            /* fine dot grid */
-            'radial-gradient(circle, hsl(var(--foreground) / 0.12) 1px, transparent 1px)',
-            /* wider crosshair grid overlay */
-            'linear-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px)',
-            'linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px)',
+            'radial-gradient(circle, hsl(var(--foreground) / 0.22) 1px, transparent 1px)',
+            'linear-gradient(hsl(var(--foreground) / 0.07) 1px, transparent 1px)',
+            'linear-gradient(90deg, hsl(var(--foreground) / 0.07) 1px, transparent 1px)',
           ].join(', '),
           backgroundSize: '28px 28px, 140px 140px, 140px 140px',
           backgroundPosition: 'center center',
         }}
       />
-      {/* Crosshair (+) accent marks at grid intersections — rendered via SVG filter trick */}
+      {/* Coarse crosshair accent dots at 140px intersection points */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-20 select-none opacity-[0.07] dark:opacity-[0.05]"
+        className="pointer-events-none absolute inset-0 -z-20 select-none opacity-[0.18] dark:opacity-[0.12]"
         style={{
-          backgroundImage: [
-            'radial-gradient(circle 0.5px at 0 0, hsl(var(--foreground)) 100%, transparent 100%)',
-          ].join(', '),
+          backgroundImage: 'radial-gradient(circle 1px at 0 0, hsl(var(--foreground)) 100%, transparent 100%)',
           backgroundSize: '140px 140px',
         }}
       />
@@ -625,7 +614,7 @@ export default function Index() {
       {/* LEFT — golden repair seam flowing down */}
       <svg
         aria-hidden="true"
-        className="pointer-events-none fixed left-0 top-0 -z-10 h-full w-[380px] select-none opacity-[0.18] dark:opacity-[0.13]"
+        className="pointer-events-none absolute left-0 top-0 -z-10 h-full w-[380px] select-none opacity-30"
         viewBox="0 0 380 900"
         preserveAspectRatio="xMidYMid meet"
         fill="none"
@@ -666,7 +655,7 @@ export default function Index() {
       {/* RIGHT — mirror circuit-trace */}
       <svg
         aria-hidden="true"
-        className="pointer-events-none fixed right-0 top-0 -z-10 h-full w-[380px] select-none opacity-[0.15] dark:opacity-[0.10]"
+        className="pointer-events-none absolute right-0 top-0 -z-10 h-full w-[380px] select-none opacity-25"
         viewBox="0 0 380 900"
         preserveAspectRatio="xMidYMid meet"
         fill="none"
@@ -706,7 +695,7 @@ export default function Index() {
       {/* CENTER — connection node cluster floating near hero */}
       <svg
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[18%] -z-10 -translate-x-1/2 select-none opacity-[0.10] dark:opacity-[0.07]"
+        className="pointer-events-none absolute left-1/2 top-[18%] -z-10 -translate-x-1/2 select-none opacity-20"
         width="520" height="320"
         viewBox="0 0 520 320"
         fill="none"
@@ -899,7 +888,7 @@ export default function Index() {
                 className="py-1 px-3 border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 gap-1.5 rounded-full font-medium"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {totalUsers}+ engineers optimizing their workflow
+                Join 100+ engineers optimizing their workflow
               </Badge>
             </div>
           </div>
