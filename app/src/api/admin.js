@@ -13,5 +13,8 @@ export const adminApi = {
   async createWorkspace(payload) {
     return apiClient.post('/admin/workspaces', payload);
   },
+  async getUsersDirectory() {
+    return apiClient.get('/admin/users-directory');
+  },
 };
 

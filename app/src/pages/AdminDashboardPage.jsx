@@ -23,10 +23,24 @@ import {
   Building2,
   PlusCircle,
   Building,
-  ShieldCheck
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from '@/components/ui/avatar';
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -36,6 +50,7 @@ export default function AdminDashboardPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [hodEmail, setHodEmail] = useState('');
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
   const { data: statsData, isLoading, error } = useQuery({
     queryKey: ['admin-stats'],
@@ -45,6 +60,11 @@ export default function AdminDashboardPage() {
   const { data: workspacesData, isLoading: loadingWorkspaces } = useQuery({
     queryKey: ['admin-workspaces'],
     queryFn: () => adminApi.getWorkspaces(),
+  });
+
+  const { data: usersData, isLoading: loadingUsers } = useQuery({
+    queryKey: ['admin-users-directory'],
+    queryFn: () => adminApi.getUsersDirectory(),
   });
 
   const resolveMutation = useMutation({
@@ -111,6 +131,18 @@ export default function AdminDashboardPage() {
   const stats = statsData?.data || {};
   const feedbackList = stats.recentFeedback || [];
   const workspaces = workspacesData?.data || [];
+  const usersList = usersData?.data || [];
+
+  const filteredUsers = usersList.filter((u) => {
+    if (!userSearchTerm.trim()) return true;
+    const term = userSearchTerm.toLowerCase();
+    const nameMatch = u.fullname?.toLowerCase().includes(term);
+    const usernameMatch = u.username?.toLowerCase().includes(term);
+    const emailMatch = u.email?.toLowerCase().includes(term);
+    const instProjectMatch = u.institutionalProjects?.some(p => p.name?.toLowerCase().includes(term));
+    const personalProjectMatch = u.personalProjects?.some(p => p.name?.toLowerCase().includes(term));
+    return nameMatch || usernameMatch || emailMatch || instProjectMatch || personalProjectMatch;
+  });
 
   const getFeedbackTypeStyles = (type) => {
     switch (type) {
@@ -267,6 +299,15 @@ export default function AdminDashboardPage() {
           <TabsTrigger value="workspaces" className="gap-2 font-semibold">
             <Building className="h-4 w-4" />
             Institute Workspaces
+          </TabsTrigger>
+          <TabsTrigger value="users" className="gap-2 font-semibold">
+            <Users className="h-4 w-4" />
+            User Directory
+            {usersList.length > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                {usersList.length}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="feedback" className="gap-2 font-semibold">
             <MessageSquare className="h-4 w-4" />
@@ -444,7 +485,196 @@ export default function AdminDashboardPage() {
           </div>
         </TabsContent>
 
-        {/* Tab 2: Feedback Logs */}
+        {/* Tab 2: User Directory & Analytics */}
+        <TabsContent value="users" className="space-y-6">
+          <Card className="border border-slate-200 dark:border-slate-800 bg-card shadow-card">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-800 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  User Directory & Analytics
+                </CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400 text-xs">
+                  Read-only view of registered accounts, institutional project allocations, and personal sandboxes.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by user or project..."
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="pl-9 h-9 text-xs"
+                  />
+                </div>
+                <Badge variant="outline" className="font-mono text-xs shrink-0">
+                  {filteredUsers.length} of {usersList.length}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loadingUsers ? (
+                <div className="p-6 space-y-3">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Skeleton key={n} className="h-14 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-3">
+                  <Users className="h-10 w-10 text-slate-300 dark:text-slate-700" />
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    {userSearchTerm.trim() ? "No users matching search criteria" : "No registered users found"}
+                  </p>
+                  {userSearchTerm.trim() && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUserSearchTerm('')}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Clear search filter
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/60 dark:bg-slate-900/40">
+                      <TableRow>
+                        <TableHead className="w-[280px] font-semibold text-xs text-slate-600 dark:text-slate-300">
+                          User
+                        </TableHead>
+                        <TableHead className="min-w-[260px] font-semibold text-xs text-slate-600 dark:text-slate-300">
+                          Institutional Projects
+                        </TableHead>
+                        <TableHead className="min-w-[220px] font-semibold text-xs text-slate-600 dark:text-slate-300">
+                          Personal Projects
+                        </TableHead>
+                        <TableHead className="w-[110px] text-center font-semibold text-xs text-slate-600 dark:text-slate-300">
+                          Total Count
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((u) => {
+                        const totalCount = u.totalProjectsCount ?? ((u.personalProjects?.length || 0) + (u.institutionalProjects?.length || 0));
+                        const avatarUrl = u.avatar?.url || (typeof u.avatar === 'string' ? u.avatar : '');
+
+                        return (
+                          <TableRow key={u._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
+                            {/* Column 1: User */}
+                            <TableCell className="align-top py-4">
+                              <div className="flex items-start gap-3">
+                                <Avatar className="h-9 w-9 shrink-0 border border-slate-200 dark:border-slate-800 mt-0.5">
+                                  <AvatarImage src={avatarUrl} alt={u.fullname || u.username} />
+                                  <AvatarFallback className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold text-xs">
+                                    {(u.fullname || u.username || 'U').charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 space-y-0.5">
+                                  <div className="font-semibold text-sm text-foreground truncate flex items-center gap-1.5">
+                                    <span className="truncate">{u.fullname || u.username}</span>
+                                    {u.role === 'superadmin' && (
+                                      <Badge className="text-[9px] px-1 py-0 bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
+                                        Super Admin
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1 truncate font-mono">
+                                    <Mail className="h-3 w-3 shrink-0 text-slate-400" />
+                                    <span className="truncate">{u.email}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+
+                            {/* Column 2: Institutional Projects */}
+                            <TableCell className="align-top py-4">
+                              {u.institutionalProjects && u.institutionalProjects.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {u.institutionalProjects.map((p, idx) => {
+                                    const roleStyle =
+                                      p.role === 'Leader'
+                                        ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30'
+                                        : p.role === 'Mentor'
+                                        ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                                        : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+
+                                    return (
+                                      <span
+                                        key={p._id || idx}
+                                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 max-w-[280px]"
+                                        title={`${p.name} (${p.role})`}
+                                      >
+                                        <Building2 className="h-3 w-3 shrink-0 text-blue-500" />
+                                        <span className="truncate font-medium">{p.name}</span>
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-[9px] px-1 py-0 font-semibold uppercase tracking-wider shrink-0 ${roleStyle}`}
+                                        >
+                                          {p.role}
+                                        </Badge>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">None</span>
+                              )}
+                            </TableCell>
+
+                            {/* Column 3: Personal Projects */}
+                            <TableCell className="align-top py-4">
+                              {u.personalProjects && u.personalProjects.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {u.personalProjects.map((p, idx) => (
+                                    <span
+                                      key={p._id || idx}
+                                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 max-w-[280px]"
+                                      title={`${p.name} (${p.role})`}
+                                    >
+                                      <FolderKanban className="h-3 w-3 shrink-0 text-slate-400" />
+                                      <span className="truncate font-medium">{p.name}</span>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[9px] px-1 py-0 font-semibold uppercase tracking-wider shrink-0 bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-400/30"
+                                      >
+                                        {p.role}
+                                      </Badge>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">None</span>
+                              )}
+                            </TableCell>
+
+                            {/* Column 4: Total Count */}
+                            <TableCell className="align-top py-4 text-center">
+                              <Badge
+                                variant={totalCount > 0 ? "secondary" : "outline"}
+                                className={`font-mono text-xs px-2.5 py-0.5 ${
+                                  totalCount > 0
+                                    ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 font-bold"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {totalCount}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 3: Feedback Logs */}
         <TabsContent value="feedback">
           <Card className="border border-slate-200 dark:border-slate-800 bg-card shadow-card">
             <CardHeader className="border-b border-slate-200 dark:border-slate-800 py-5">

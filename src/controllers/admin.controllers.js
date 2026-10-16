@@ -146,10 +146,212 @@ const getInstituteWorkspaces = asyncHandler(async (req, res) => {
   );
 });
 
+const getUsersDirectory = asyncHandler(async (req, res) => {
+  const users = await User.aggregate([
+    {
+      $match: {
+        $or: [
+          { deletedAt: null },
+          { deletedAt: { $exists: false } },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "projects",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $lookup: {
+              from: "projectmembers",
+              let: { projId: "$_id" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ["$project", "$$projId"] },
+                        { $eq: ["$user", "$$userId"] },
+                        {
+                          $or: [
+                            { $eq: ["$deletedAt", null] },
+                            { $not: ["$deletedAt"] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: "userMembership",
+            },
+          },
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $or: [
+                      { $eq: ["$createdBy", "$$userId"] },
+                      { $in: ["$$userId", { $ifNull: ["$members", []] }] },
+                      { $in: ["$$userId", { $ifNull: ["$members.user", []] }] },
+                      { $gt: [{ $size: "$userMembership" }, 0] },
+                    ],
+                  },
+                  {
+                    $or: [
+                      { $eq: ["$deletedAt", null] },
+                      { $not: ["$deletedAt"] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              workspaceId: 1,
+              createdBy: 1,
+              role: {
+                $cond: {
+                  if: { $gt: [{ $size: "$userMembership" }, 0] },
+                  then: {
+                    $let: {
+                      vars: {
+                        rawRole: { $arrayElemAt: ["$userMembership.role", 0] },
+                      },
+                      in: {
+                        $switch: {
+                          branches: [
+                            {
+                              case: { $eq: ["$$rawRole", "admin"] },
+                              then: {
+                                $cond: {
+                                  if: {
+                                    $and: [
+                                      { $ne: ["$workspaceId", null] },
+                                      { $ne: ["$workspaceId", ""] },
+                                    ],
+                                  },
+                                  then: "Mentor",
+                                  else: "Leader",
+                                },
+                              },
+                            },
+                            {
+                              case: { $eq: ["$$rawRole", "project_admin"] },
+                              then: "Leader",
+                            },
+                            {
+                              case: { $eq: ["$$rawRole", "member"] },
+                              then: "Member",
+                            },
+                          ],
+                          default: {
+                            $cond: {
+                              if: { $eq: ["$createdBy", "$$userId"] },
+                              then: "Leader",
+                              else: "Member",
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  else: {
+                    $cond: {
+                      if: { $eq: ["$createdBy", "$$userId"] },
+                      then: "Leader",
+                      else: "Member",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+        as: "allProjects",
+      },
+    },
+    {
+      $addFields: {
+        personalProjects: {
+          $filter: {
+            input: "$allProjects",
+            as: "p",
+            cond: {
+              $or: [
+                { $eq: ["$$p.workspaceId", null] },
+                { $not: ["$$p.workspaceId"] },
+              ],
+            },
+          },
+        },
+        institutionalProjects: {
+          $filter: {
+            input: "$allProjects",
+            as: "p",
+            cond: {
+              $and: [
+                { $ne: ["$$p.workspaceId", null] },
+                { $ne: ["$$p.workspaceId", ""] },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        fullname: 1,
+        username: 1,
+        email: 1,
+        avatar: 1,
+        role: 1,
+        createdAt: 1,
+        personalProjects: {
+          $map: {
+            input: "$personalProjects",
+            as: "proj",
+            in: {
+              _id: "$$proj._id",
+              name: "$$proj.name",
+              role: "$$proj.role",
+            },
+          },
+        },
+        institutionalProjects: {
+          $map: {
+            input: "$institutionalProjects",
+            as: "proj",
+            in: {
+              _id: "$$proj._id",
+              name: "$$proj.name",
+              role: "$$proj.role",
+            },
+          },
+        },
+        totalProjectsCount: { $size: "$allProjects" },
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, users, "Users directory fetched successfully")
+  );
+});
+
 export {
   getAdminStats,
   updateFeedbackStatus,
   createInstituteWorkspace,
   getInstituteWorkspaces,
+  getUsersDirectory,
 };
 
